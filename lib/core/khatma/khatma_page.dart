@@ -208,7 +208,182 @@ class _KhatmaPageState extends State<KhatmaPage> {
           icon: const Icon(Icons.delete_outline),
           label: const Text("إلغاء الهدف", style: TextStyle(fontFamily: "cairo")),
         ),
+        SizedBox(height: 16.h),
+        _buildReadSurahs(goal),
+        SizedBox(height: 12.h),
+        _buildPagesGrid(goal),
+        SizedBox(height: 12.h),
+        _buildDailyRecord(),
       ],
+    );
+  }
+
+  Widget _buildReadSurahs(Map<String, dynamic> goal) {
+    final completed = KhatmaService.getReadSurahs();
+    return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.r), side: BorderSide(color: Colors.grey.shade200)),
+      child: ExpansionTile(
+        leading: Icon(Icons.check_circle, color: completed.isEmpty ? Colors.grey : const Color(0xff6B8E4E)),
+        title: Text("السور المكتملة (${completed.length})", style: const TextStyle(fontFamily: "cairo", fontWeight: FontWeight.bold, fontSize: 13)),
+        subtitle: Text(completed.isEmpty ? "لم تكتمل أي سورة بعد" : "اضغط لعرض السور المكتملة", style: TextStyle(fontFamily: "cairo", fontSize: 11, color: Colors.grey[600])),
+        children: [
+          if (completed.isEmpty)
+            Padding(padding: EdgeInsets.all(12.w), child: Text("اقرأ صفحات سورة كاملة لتظهر هنا", style: TextStyle(fontFamily: "cairo", color: Colors.grey[500]))),
+          if (completed.isNotEmpty)
+            Padding(
+              padding: EdgeInsets.all(12.w),
+              child: Wrap(
+                spacing: 8.w,
+                runSpacing: 8.h,
+                children: completed.map((s) => Chip(
+                  label: Text(s["name"], style: const TextStyle(fontFamily: "cairo", fontSize: 11)),
+                  backgroundColor: const Color(0xff6B8E4E).withOpacity(0.12),
+                  side: const BorderSide(color: Color(0xff6B8E4E)),
+                  avatar: const Icon(Icons.check, size: 14, color: Color(0xff6B8E4E)),
+                )).toList(),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPagesGrid(Map<String, dynamic> goal) {
+    final startPage = (goal['startPage'] as int?) ?? 1;
+    final khatmaPages = getValue("khatma_pages_read");
+    Set<int> readSet = {};
+    if (khatmaPages is List) readSet = khatmaPages.map((e) => int.tryParse(e.toString()) ?? -1).where((e) => e >= startPage).toSet();
+    final total = (goal['totalPages'] as int?) ?? KhatmaService.totalPages;
+    return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.r), side: BorderSide(color: Colors.grey.shade200)),
+      child: ExpansionTile(
+        leading: const Icon(Icons.grid_view, color: Color(0xff6B8E4E)),
+        title: Text("الصفحات المقروءة (${readSet.length}/$total)", style: const TextStyle(fontFamily: "cairo", fontWeight: FontWeight.bold, fontSize: 13)),
+        subtitle: Text("من صفحة $startPage إلى 604 - اضغط على رقم للانتقال", style: TextStyle(fontFamily: "cairo", fontSize: 11, color: Colors.grey[600])),
+        children: [
+          Padding(
+            padding: EdgeInsets.all(12.w),
+            child: GridView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 10, crossAxisSpacing: 6, mainAxisSpacing: 6, childAspectRatio: 1),
+              itemCount: total,
+              itemBuilder: (context, idx) {
+                final pageNum = startPage + idx;
+                final isRead = readSet.contains(pageNum);
+                return InkWell(
+                  onTap: () async {
+                    dynamic jData; dynamic qData;
+                    try {
+                      final str = await rootBundle.loadString('assets/json/surahs.json');
+                      jData = json.decode(str);
+                    } catch (_) {}
+                    try {
+                      final str = await rootBundle.loadString('assets/json/quarters.json');
+                      qData = json.decode(str);
+                    } catch (_) {}
+                    if (!mounted) return;
+                    Navigator.push(context, MaterialPageRoute(builder: (_) => QuranDetailsPage(pageNumber: pageNum, jsonData: jData ?? [], quarterJsonData: qData ?? [], shouldHighlightText: false, highlightVerse: null, shouldHighlightSura: false)));
+                  },
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: isRead ? const Color(0xff6B8E4E) : Colors.grey[100],
+                      borderRadius: BorderRadius.circular(6.r),
+                      border: Border.all(color: isRead ? const Color(0xff6B8E4E) : Colors.grey[300]!),
+                    ),
+                    child: Center(
+                      child: isRead
+                          ? Icon(Icons.check, size: 14.sp, color: Colors.white)
+                          : Text("$pageNum", style: TextStyle(fontSize: 9.sp, fontFamily: "roboto", color: Colors.grey[700])),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+          Padding(
+            padding: EdgeInsets.only(bottom: 12.w),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(width: 12.w, height: 12.w, decoration: const BoxDecoration(color: Color(0xff6B8E4E), shape: BoxShape.circle)),
+                SizedBox(width: 4.w),
+                Text("مقروءة", style: TextStyle(fontSize: 10.sp, fontFamily: "cairo")),
+                SizedBox(width: 12.w),
+                Container(width: 12.w, height: 12.w, decoration: BoxDecoration(color: Colors.grey[200], shape: BoxShape.circle, border: Border.all(color: Colors.grey[300]!))),
+                SizedBox(width: 4.w),
+                Text("متبقية", style: TextStyle(fontSize: 10.sp, fontFamily: "cairo")),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDailyRecord() {
+    final List<Map<String, dynamic>> last7 = [];
+    for (int i = 6; i >= 0; i--) {
+      final d = DateTime.now().subtract(Duration(days: i));
+      final key = "${d.year.toString().padLeft(4,'0')}-${d.month.toString().padLeft(2,'0')}-${d.day.toString().padLeft(2,'0')}";
+      final pages = KhatmaService.getPagesForDate(key);
+      last7.add({"date": d, "key": key, "pages": pages});
+    }
+    return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.r), side: BorderSide(color: Colors.grey.shade200)),
+      child: ExpansionTile(
+        leading: const Icon(Icons.calendar_today, color: Color(0xff6B8E4E)),
+        title: const Text("سجل الأيام السبعة", style: TextStyle(fontFamily: "cairo", fontWeight: FontWeight.bold, fontSize: 13)),
+        subtitle: Text("اضغط على يوم لعرض صفحاته", style: TextStyle(fontFamily: "cairo", fontSize: 11, color: Colors.grey[600])),
+        children: last7.map((entry) {
+          final d = entry["date"] as DateTime;
+          final pages = entry["pages"] as List<int>;
+          final label = DateFormat('yyyy-MM-dd').format(d);
+          return Padding(
+            padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
+            child: Container(
+              padding: EdgeInsets.all(10.w),
+              decoration: BoxDecoration(color: pages.isEmpty ? Colors.grey[50] : const Color(0xff6B8E4E).withOpacity(0.06), borderRadius: BorderRadius.circular(8.r), border: Border.all(color: pages.isEmpty ? Colors.grey[200]! : const Color(0xff6B8E4E).withOpacity(0.2))),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Text(label, style: TextStyle(fontFamily: "roboto", fontWeight: FontWeight.bold, fontSize: 12.sp, color: pages.isEmpty ? Colors.grey[600] : const Color(0xff6B8E4E))),
+                      const Spacer(),
+                      Text("${pages.length} صفحة", style: TextStyle(fontFamily: "cairo", fontSize: 11.sp, color: Colors.grey[700])),
+                    ],
+                  ),
+                  if (pages.isNotEmpty) SizedBox(height: 6.h),
+                  if (pages.isNotEmpty)
+                    Wrap(
+                      spacing: 6.w,
+                      runSpacing: 6.h,
+                      children: pages.map((p) => InkWell(
+                        onTap: () async {
+                          dynamic jData; dynamic qData;
+                          try { final str = await rootBundle.loadString('assets/json/surahs.json'); jData = json.decode(str); } catch (_) {}
+                          try { final str = await rootBundle.loadString('assets/json/quarters.json'); qData = json.decode(str); } catch (_) {}
+                          if (!mounted) return;
+                          Navigator.push(context, MaterialPageRoute(builder: (_) => QuranDetailsPage(pageNumber: p, jsonData: jData ?? [], quarterJsonData: qData ?? [], shouldHighlightText: false, highlightVerse: null, shouldHighlightSura: false)));
+                        },
+                        child: Container(
+                          padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
+                          decoration: BoxDecoration(color: const Color(0xff6B8E4E), borderRadius: BorderRadius.circular(6.r)),
+                          child: Text("$p", style: TextStyle(color: Colors.white, fontSize: 11.sp, fontFamily: "roboto")),
+                        ),
+                      )).toList(),
+                    ),
+                  if (pages.isEmpty) Text("لا توجد قراءة", style: TextStyle(fontFamily: "cairo", fontSize: 11.sp, color: Colors.grey[500])),
+                ],
+              ),
+            ),
+          );
+        }).toList(),
+      ),
     );
   }
 

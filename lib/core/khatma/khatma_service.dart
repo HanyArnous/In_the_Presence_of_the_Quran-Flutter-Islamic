@@ -1,4 +1,5 @@
 import 'package:nabd/GlobalHelpers/hive_helper.dart';
+import 'package:quran/quran.dart' as quran;
 
 class KhatmaService {
   static const int totalPages = 604;
@@ -110,7 +111,6 @@ class KhatmaService {
   }
 
   static int getStreak() {
-    // simple streak: count consecutive days with reading >=1 until today
     int streak = 0;
     DateTime d = DateTime.now();
     while (true) {
@@ -121,7 +121,6 @@ class KhatmaService {
         d = d.subtract(const Duration(days: 1));
         if (streak > 365) break;
       } else {
-        // if today is 0, don't break immediately? Check if today is 0 but yesterday has data, streak should not count today
         if (streak == 0 && d.day == DateTime.now().day) {
           d = d.subtract(const Duration(days: 1));
           continue;
@@ -130,5 +129,61 @@ class KhatmaService {
       }
     }
     return streak;
+  }
+
+  static List<int> getPagesForSurah(int surahNumber) {
+    final List<int> pages = [];
+    for (int p = 1; p <= totalPages; p++) {
+      try {
+        final data = quran.getPageData(p);
+        for (final e in data) {
+          if (e["surah"] == surahNumber) {
+            pages.add(p);
+            break;
+          }
+          // صفحات تحتوي سور متعددة: تحقق إذا السورة ضمن النطاق
+          final start = e["start"] as int?;
+          final end = e["end"] as int?;
+          if (start != null && end != null && e["surah"] == surahNumber) {
+            pages.add(p);
+            break;
+          }
+        }
+      } catch (_) {}
+    }
+    return pages;
+  }
+
+  static List<Map<String, dynamic>> getReadSurahs() {
+    final goal = getActiveGoal();
+    if (goal == null) return [];
+    final khatmaPages = getValue("khatma_pages_read");
+    Set<int> readSet = {};
+    if (khatmaPages is List) {
+      readSet = khatmaPages.map((e) => int.tryParse(e.toString()) ?? -1).where((e) => e > 0).toSet();
+    }
+    final List<Map<String, dynamic>> result = [];
+    for (int s = 1; s <= 114; s++) {
+      final pages = getPagesForSurah(s);
+      if (pages.isEmpty) continue;
+      int readCount = pages.where((p) => readSet.contains(p)).length;
+      if (readCount == 0) continue;
+      double percent = readCount / pages.length;
+      // فقط المكتملة كما طلب المستخدم (الخيار 3)
+      if (percent >= 1.0) {
+        String name;
+        try { name = quran.getSurahNameArabic(s); } catch (_) { name = "سورة $s"; }
+        result.add({"surah": s, "name": name, "read": readCount, "total": pages.length, "percent": percent});
+      }
+    }
+    return result;
+  }
+
+  static List<int> getPagesForDate(String dateKey) {
+    final raw = getValue("$dateKey-quran_reading-pages");
+    if (raw is List) {
+      return raw.map((e) => int.tryParse(e.toString()) ?? -1).where((e) => e > 0).toList()..sort();
+    }
+    return [];
   }
 }

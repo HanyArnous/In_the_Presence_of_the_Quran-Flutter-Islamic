@@ -32,12 +32,16 @@ void callbackDispatcher() {
         'hadith_channel'
       ];
       for (var id in channelIds) {
+        final isPrayer = id == 'prayer_channel';
         await flutterLocalNotificationsPlugin
             .resolvePlatformSpecificImplementation<
                 AndroidFlutterLocalNotificationsPlugin>()
             ?.createNotificationChannel(AndroidNotificationChannel(
                 id, id.replaceAll('_', ' '),
-                importance: Importance.max));
+                importance: Importance.max,
+                sound: RawResourceAndroidNotificationSound(isPrayer ? 'azan' : 'notification'),
+                playSound: true,
+                enableVibration: true));
       }
 
       switch (task) {
@@ -233,13 +237,28 @@ Future<void> _showRandomZikrNotification() async {
 
 Future<void> _showNotification(
     int id, String title, String body, String channel) async {
+  final isPrayer = channel == 'prayer_channel';
   await flutterLocalNotificationsPlugin.show(
       id,
       title,
       body,
       NotificationDetails(
-          android: AndroidNotificationDetails(channel, channel,
-              importance: Importance.max, priority: Priority.high, styleInformation: BigTextStyleInformation(body))));
+          android: AndroidNotificationDetails(
+            channel,
+            channel,
+            importance: Importance.max,
+            priority: Priority.high,
+            playSound: true,
+            sound: RawResourceAndroidNotificationSound(isPrayer ? 'azan' : 'notification'),
+            enableVibration: true,
+            visibility: NotificationVisibility.public,
+            styleInformation: BigTextStyleInformation(
+              body,
+              htmlFormatBigText: false,
+              contentTitle: title,
+              htmlFormatContentTitle: false,
+            ),
+          )));
 }
 
 void initMessaging() async {

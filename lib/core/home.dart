@@ -1438,16 +1438,16 @@ class _HomeState extends State<Home>
                                                     imagePath:
                                                         "assets/images/kabaa.png"),
                                                 SuperellipseButton(
-                                                    text: "asmaa".tr(),
-                                                    onPressed: () {
+                                                    text: "sibha".tr(),
+                                                    onPressed: () async {
                                                       Navigator.push(
                                                           context,
                                                           CupertinoPageRoute(
-                                                              builder: (c) =>
-                                                                  const AllahNamesPage()));
+                                                              builder: (builder) =>
+                                                                  const SibhaPage()));
                                                     },
                                                     imagePath:
-                                                        "assets/images/names.svg"),
+                                                        "assets/images/sibha.png"),
                                                 SuperellipseButton(
                                                     text: "azkar".tr(),
                                                     onPressed: () {
@@ -1461,28 +1461,27 @@ class _HomeState extends State<Home>
                                                     imagePath:
                                                         "assets/images/azkar.png"),
                                                 SuperellipseButton(
-                                                    text: "notifications".tr(),
-                                                    onPressed: () async {
-                                                      // await FlutterOverlayWindow.requestPermission();
+                                                    text: "ختمة",
+                                                    onPressed: () {
                                                       Navigator.push(
                                                           context,
                                                           CupertinoPageRoute(
                                                               builder: (builder) =>
-                                                                  const NotificationsPage()));
+                                                                  const KhatmaPage()));
                                                     },
                                                     imagePath:
-                                                        "assets/images/notifications.png"),
+                                                        "assets/images/quranlogo.png"),
                                                 SuperellipseButton(
-                                                    text: "sibha".tr(),
-                                                    onPressed: () async {
+                                                    text: "asmaa".tr(),
+                                                    onPressed: () {
                                                       Navigator.push(
                                                           context,
                                                           CupertinoPageRoute(
-                                                              builder: (builder) =>
-                                                                  const SibhaPage()));
+                                                              builder: (c) =>
+                                                                  const AllahNamesPage()));
                                                     },
                                                     imagePath:
-                                                        "assets/images/sibha.png"),
+                                                        "assets/images/names.svg"),
                                                 SuperellipseButton(
                                                     text: "calender".tr(),
                                                     onPressed: () async {
@@ -1517,16 +1516,17 @@ class _HomeState extends State<Home>
                                                     imagePath:
                                                         "assets/images/azan.jpg"),
                                                 SuperellipseButton(
-                                                    text: "ختمة",
-                                                    onPressed: () {
+                                                    text: "notifications".tr(),
+                                                    onPressed: () async {
+                                                      // await FlutterOverlayWindow.requestPermission();
                                                       Navigator.push(
                                                           context,
                                                           CupertinoPageRoute(
                                                               builder: (builder) =>
-                                                                  const KhatmaPage()));
+                                                                  const NotificationsPage()));
                                                     },
                                                     imagePath:
-                                                        "assets/images/quranlogo.png"),
+                                                        "assets/images/notifications.png"),
                                                 SuperellipseButton(
                                                     text: "نسخ احتياطي",
                                                     onPressed: () {

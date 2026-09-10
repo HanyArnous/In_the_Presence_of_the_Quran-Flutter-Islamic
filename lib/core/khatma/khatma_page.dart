@@ -103,8 +103,10 @@ class _KhatmaPageState extends State<KhatmaPage> {
     final todayRemaining = (dailyGoal - todayRead).clamp(0, dailyGoal);
     final streak = KhatmaService.getStreak();
 
-    return ListView(
-      padding: EdgeInsets.all(16.w),
+    return SafeArea(
+      bottom: true,
+      child: ListView(
+        padding: EdgeInsets.fromLTRB(16.w, 16.w, 16.w, 16.w + MediaQuery.of(context).padding.bottom + 24.h),
       children: [
         Container(
           padding: EdgeInsets.all(20.w),
@@ -215,6 +217,7 @@ class _KhatmaPageState extends State<KhatmaPage> {
         SizedBox(height: 12.h),
         _buildDailyRecord(),
       ],
+    ),
     );
   }
 

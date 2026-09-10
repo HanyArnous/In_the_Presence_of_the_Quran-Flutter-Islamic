@@ -531,7 +531,7 @@ class QuranDetailsPageState extends State<QuranDetailsPage> {
                                             ),
                                             const SizedBox(height: 4),
                                             Text(
-                                              "عادي",
+                                              "عمودي",
                                               style: TextStyle(
                                                 fontFamily: "cairo",
                                                 fontSize: 12,

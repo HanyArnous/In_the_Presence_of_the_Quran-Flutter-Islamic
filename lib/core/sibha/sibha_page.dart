@@ -134,9 +134,11 @@ class _SibhaPageState extends State<SibhaPage> {
 
   @override
   void initState() {
-    _audioPlayer = AudioPlayer(); // Initialize AudioPlayer
-    _audioPlayerInitialized = true; // Mark as initialized
-    _tapSoundEnabled = getValue("tap_sound_enabled") ?? true; // تحميل حالة صوت النقرة
+    _audioPlayer = AudioPlayer();
+    _audioPlayer.setPlayerMode(PlayerMode.lowLatency);
+    _audioPlayer.setReleaseMode(ReleaseMode.stop);
+    _audioPlayerInitialized = true;
+    _tapSoundEnabled = getValue("tap_sound_enabled") ?? true;
     loadAllTasbeehs();
     customTasbeehFetcher();
     _initializeCurrentMax();
@@ -844,6 +846,8 @@ class _SibhaPageState extends State<SibhaPage> {
   void _playTapSound() async {
     try {
       if (!_audioPlayerInitialized) return;
+      // إيقاف فوري ثم تشغيل لضمان الصوت مع كل ضغطة حتى السريعة
+      try { await _audioPlayer.stop(); } catch (_) {}
       await _audioPlayer.play(AssetSource('click.mp3'));
     } catch (e) {
       debugPrint('Error playing sound: $e');

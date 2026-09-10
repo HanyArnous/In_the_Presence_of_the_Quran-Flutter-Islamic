@@ -39,7 +39,9 @@ class _ZikrPageState extends State<ZikrPage> {
   void initState() {
     super.initState();
     _audioPlayer = AudioPlayer();
-    _tapSoundEnabled = getValue("tap_sound_enabled") ?? true; // تحميل حالة صوت النقرة
+    _audioPlayer.setPlayerMode(PlayerMode.lowLatency);
+    _audioPlayer.setReleaseMode(ReleaseMode.stop);
+    _tapSoundEnabled = getValue("tap_sound_enabled") ?? true;
     _audioPlayer.onPlayerStateChanged.listen((state) {
       if (state == PlayerState.completed) {
         setState(() {
@@ -918,6 +920,7 @@ class _ZikrPageState extends State<ZikrPage> {
 
   void _playTapSound() async {
     try {
+      try { await _audioPlayer.stop(); } catch (_) {}
       await _audioPlayer.play(AssetSource('click.mp3'));
     } catch (e) {
       debugPrint('Error playing sound: $e');

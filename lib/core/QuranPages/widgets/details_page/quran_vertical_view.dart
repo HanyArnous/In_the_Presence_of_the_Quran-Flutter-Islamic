@@ -161,7 +161,7 @@ class _QuranVerticalViewState extends State<QuranVerticalView> {
                                       
                                       // --- إضافة التتبع الجديدة ---
                                       _readingTimer?.cancel(); // إلغاء عداد الصفحة السابقة فوراً
-                                      _readingTimer = Timer(const Duration(seconds: 30), () {
+                                      _readingTimer = Timer(const Duration(seconds: 10), () {
                                         _recordPageRead(index);
                                       });
                                     }
@@ -182,6 +182,7 @@ class _QuranVerticalViewState extends State<QuranVerticalView> {
                                           for (var i = e["start"];
                                               i <= e["end"];
                                               i++) {
+                                            try {
                                             if (i == 1) {
                                               spans.add(WidgetSpan(
                                                 child: HeaderWidget(
@@ -228,8 +229,14 @@ class _QuranVerticalViewState extends State<QuranVerticalView> {
                                                         () => setState(() {
                                                               selectedSpan = "";
                                                             }),
-                                              text:
-                                                  quran.getVerse(e["surah"], i),
+                                              text: (() {
+                                                try {
+                                                  return quran.getVerse(e["surah"], i);
+                                                } catch (e2) {
+                                                  debugPrint("getVerse failed ${e["surah"]}:$i - $e2");
+                                                  return "";
+                                                }
+                                              })(),
                                               style: TextStyle(
                                                 color: primaryColors[getValue(
                                                     "quranPageolorsIndex")],
@@ -238,6 +245,7 @@ class _QuranVerticalViewState extends State<QuranVerticalView> {
                                                     .toDouble(),
                                                 fontFamily: getValue(
                                                     "selectedFontFamily"),
+                                                fontWeight: FontWeight.normal,
                                                 backgroundColor: widget.bookmarks
                                                         .where((element) =>
                                                             element["suraNumber"] ==
@@ -256,9 +264,7 @@ class _QuranVerticalViewState extends State<QuranVerticalView> {
                                                                 alpha: .28)
                                                         : widget
                                                                 .shouldHighlightText
-                                                            ? quran.getVerse(e["surah"], i) ==
-                                                                    widget
-                                                                        .highlightVerse
+                                                            ? (() { try { return quran.getVerse(e["surah"], i) == widget.highlightVerse; } catch (_) { return false; } })()
                                                                 ? highlightColors[getValue("quranPageolorsIndex")]
                                                                     .withValues(
                                                                         alpha:
@@ -299,6 +305,9 @@ class _QuranVerticalViewState extends State<QuranVerticalView> {
                                                         "0x${widget.bookmarks.where((element) => element["suraNumber"] == e["surah"] && element["verseNumber"] == i).first["color"]}")),
                                                   )));
                                             }
+                                            } catch (e2) {
+                                              debugPrint("Ayah iteration failed");
+                                            }
                                           }
                                           return spans;
                                         }).toList(),
@@ -322,7 +331,7 @@ class _QuranVerticalViewState extends State<QuranVerticalView> {
                         
                         // --- إضافة التتبع الجديدة ---
                         _readingTimer?.cancel(); // إلغاء عداد الصفحة السابقة فوراً
-                        _readingTimer = Timer(const Duration(seconds: 30), () {
+                        _readingTimer = Timer(const Duration(seconds: 10), () {
                           _recordPageRead(index);
                         });
                       }
@@ -346,19 +355,28 @@ class _QuranVerticalViewState extends State<QuranVerticalView> {
                               children: quran.getPageData(index).expand((e) {
                                 List<InlineSpan> spans = [];
                                 for (var i = e["start"]; i <= e["end"]; i++) {
+                                  try {
                                   if (i == 1) {
-                                    spans.add(WidgetSpan(
-                                      child: HeaderWidget(
-                                        e: e,
-                                        jsonData: widget.jsonData,
-                                      ),
-                                    ));
+                                    try {
+                                      spans.add(WidgetSpan(
+                                        child: HeaderWidget(
+                                          e: e,
+                                          jsonData: widget.jsonData,
+                                        ),
+                                      ));
+                                    } catch (e2) {
+                                      debugPrint("Header failed ${e["surah"]}:$i - $e2");
+                                    }
 
                                     if (index != 187 && index != 1) {
-                                      spans.add(WidgetSpan(
-                                          child: Basmallah(
-                                        index: getValue("quranPageolorsIndex"),
-                                      )));
+                                      try {
+                                        spans.add(WidgetSpan(
+                                            child: Basmallah(
+                                          index: getValue("quranPageolorsIndex"),
+                                        )));
+                                      } catch (e2) {
+                                        debugPrint("Basmallah failed $index - $e2");
+                                      }
                                     }
                                     if (index == 187 || index == 1) {
                                       spans.add(WidgetSpan(
@@ -388,7 +406,14 @@ class _QuranVerticalViewState extends State<QuranVerticalView> {
                                       ..onLongPressCancel = () => setState(() {
                                             selectedSpan = "";
                                           }),
-                                    text: quran.getVerse(e["surah"], i),
+                                    text: (() {
+                                      try {
+                                        return quran.getVerse(e["surah"], i);
+                                      } catch (e2) {
+                                        debugPrint("getVerse failed ${e["surah"]}:$i - $e2");
+                                        return "";
+                                      }
+                                    })(),
                                     style: TextStyle(
                                       color: primaryColors[
                                           getValue("quranPageolorsIndex")],
@@ -396,17 +421,7 @@ class _QuranVerticalViewState extends State<QuranVerticalView> {
                                           .toDouble(),
                                       fontFamily:
                                           getValue("selectedFontFamily"),
-                                      fontWeight: (() {
-                                        final int level =
-                                            (getValue("quranBoldLevel") ?? 0)
-                                                    is int
-                                                ? (getValue("quranBoldLevel") ??
-                                                    0)
-                                                : 0;
-                                        return level <= 0
-                                            ? FontWeight.normal
-                                            : FontWeight.w600;
-                                      })(),
+                                      fontWeight: FontWeight.normal,
                                       backgroundColor: widget.bookmarks
                                               .where((element) =>
                                                   element["suraNumber"] == e["surah"] &&
@@ -415,8 +430,7 @@ class _QuranVerticalViewState extends State<QuranVerticalView> {
                                           ? Color(int.parse("0x${widget.bookmarks.where((element) => element["suraNumber"] == e["surah"] && element["verseNumber"] == i).first["color"]}"))
                                               .withValues(alpha: .19)
                                           : widget.shouldHighlightText
-                                              ? quran.getVerse(e["surah"], i) ==
-                                                      widget.highlightVerse
+                                              ? (() { try { return quran.getVerse(e["surah"], i) == widget.highlightVerse; } catch (_) { return false; } })()
                                                   ? highlightColors[getValue("quranPageolorsIndex")]
                                                       .withValues(alpha: .25)
                                                   : selectedSpan ==
@@ -450,13 +464,20 @@ class _QuranVerticalViewState extends State<QuranVerticalView> {
                                           element["suraNumber"] == e["surah"] &&
                                           element["verseNumber"] == i)
                                       .isNotEmpty) {
-                                    spans.add(WidgetSpan(
-                                        alignment: PlaceholderAlignment.middle,
-                                        child: Icon(
-                                          Icons.bookmark,
-                                          color: Color(int.parse(
-                                              "0x${widget.bookmarks.where((element) => element["suraNumber"] == e["surah"] && element["verseNumber"] == i).first["color"]}")),
-                                        )));
+                                    try {
+                                      spans.add(WidgetSpan(
+                                          alignment: PlaceholderAlignment.middle,
+                                          child: Icon(
+                                            Icons.bookmark,
+                                            color: Color(int.parse(
+                                                "0x${widget.bookmarks.where((element) => element["suraNumber"] == e["surah"] && element["verseNumber"] == i).first["color"]}")),
+                                          )));
+                                    } catch (e2) {
+                                      debugPrint("Bookmark icon failed ${e["surah"]}:$i - $e2");
+                                    }
+                                  }
+                                  } catch (e2) {
+                                    debugPrint("Ayah ${e["surah"]}:$i failed - $e2");
                                   }
                                 }
                                 return spans;

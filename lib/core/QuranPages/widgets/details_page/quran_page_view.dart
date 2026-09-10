@@ -48,7 +48,8 @@ class QuranPageView extends StatefulWidget {
 
 class _QuranPageViewState extends State<QuranPageView> {
   String selectedSpan = "";
-  Timer? _readingTimer; // مؤقت لتتبع قراءة الصفحة
+  Timer? _readingTimer;
+  int _lastRecordedPage = -1;
   List<GlobalKey> richTextKeys = List.generate(
     604,
     (_) => GlobalKey(),
@@ -81,23 +82,25 @@ class _QuranPageViewState extends State<QuranPageView> {
     final key = "$surah-$verse";
     final cached = _qcfCache[key];
     if (cached != null) return cached;
-    final s = quran.getVerseQCF(surah, verse).replaceAll(' ', '');
-    _qcfCache[key] = s;
-    return s;
+    try {
+      final s = quran.getVerseQCF(surah, verse).replaceAll(' ', '');
+      _qcfCache[key] = s;
+      return s;
+    } catch (e) {
+      debugPrint("QCF _getQcfText failed $surah:$verse - $e");
+      return "";
+    }
   }
 
-  // دالة موحدة لتسجيل قراءة الصفحة (لضمان اكتمال البيانات)
-  void _recordPageRead() {
+  void _recordPageRead(int pageNumber) {
+    if (_lastRecordedPage == pageNumber) return;
     final today = DateTime.now();
     final dateKey = DateFormat('yyyy-MM-dd').format(today);
-    
-    // 1. تحديث العداد اليومي (للرسم البياني)
     final currentCount = getValue("$dateKey-quran_reading-count") ?? 0;
     updateValue("$dateKey-quran_reading-count", (currentCount as num) + 1);
-    
-    // 2. تحديث الإجمالي العام (لبطاقات الملخص) - أضف هذا السطر
     final totalCount = getValue("quran_reading-totalCount") ?? 0;
     updateValue("quran_reading-totalCount", (totalCount as num) + 1);
+    _lastRecordedPage = pageNumber;
   }
 
   TextSpan _composePageSpan(int index) {
@@ -115,82 +118,138 @@ class _QuranPageViewState extends State<QuranPageView> {
     final List<InlineSpan> children = quran.getPageData(index).expand((e) {
       List<InlineSpan> spans = [];
       for (var i = e["start"]; i <= e["end"]; i++) {
-        if (i == 1) {
-          spans.add(WidgetSpan(
-            child: HeaderWidget(e: e, jsonData: widget.jsonData),
-          ));
-          if (index != 187 && index != 1) {
-            spans.add(WidgetSpan(
-                child: Basmallah(index: getValue("quranPageolorsIndex"))));
+        try {
+          if (i == 1) {
+            try {
+              spans.add(WidgetSpan(
+                child: HeaderWidget(e: e, jsonData: widget.jsonData),
+              ));
+            } catch (e2) {
+              debugPrint("HeaderWidget failed ${e["surah"]}:$i - $e2");
+            }
+            if (index != 187 && index != 1) {
+              try {
+                spans.add(WidgetSpan(
+                    child:
+                        Basmallah(index: getValue("quranPageolorsIndex"))));
+              } catch (e2) {
+                debugPrint("Basmallah failed $index - $e2");
+              }
+            }
+            if (index == 187) {
+              spans.add(const WidgetSpan(child: SizedBox(height: 10)));
+            }
           }
-          if (index == 187) {
-            spans.add(const WidgetSpan(child: SizedBox(height: 10)));
+
+          final String s = _getQcfText(e["surah"], i);
+          String text;
+          if (i == e["start"]) {
+            if (s.isEmpty) {
+              text = "";
+            } else if (s.length == 1) {
+              text = s;
+            } else {
+              text = "${s.substring(0, 1)}\u200A${s.substring(1)}";
+            }
+          } else {
+            text = s;
           }
-        }
+          final bool isBookmarked =
+              _bookmarksCache.contains("${e["surah"]}-$i");
 
-        final String s = _getQcfText(e["surah"], i);
-        final String text =
-            i == e["start"] ? "${s.substring(0, 1)}\u200A${s.substring(1)}" : s;
-        final bool isBookmarked = _bookmarksCache.contains("${e["surah"]}-$i");
+          Color textColor;
+          if (isBookmarked) {
+            try {
+              final match = widget.bookmarks.where((element) =>
+                  element["suraNumber"] == e["surah"] &&
+                  element["verseNumber"] == i);
+              if (match.isNotEmpty) {
+                textColor = Color(
+                    int.parse("0x${match.first["color"]}"));
+              } else {
+                textColor = primaryColors[colorIndex];
+              }
+            } catch (_) {
+              textColor = primaryColors[colorIndex];
+            }
+          } else {
+            textColor = primaryColors[colorIndex];
+          }
 
-        spans.add(TextSpan(
-          recognizer: LongPressGestureRecognizer()
-            ..onLongPress = () {
-              widget.onShowAyahOptions(index, e["surah"], i);
-            }
-            ..onLongPressDown = (details) {
-              selectedSpan = "${e["surah"]}-$i";
-              setState(() {});
-            }
-            ..onLongPressUp = () {
-              selectedSpan = "";
-              setState(() {});
-            }
-            ..onLongPressCancel = () {
-              selectedSpan = "";
-              setState(() {});
-            },
-          text: text,
-          semanticsLabel: "${e["surah"]}-$i",
-          style: TextStyle(
-            color: isBookmarked
-                ? Color(int.parse(
-                    "0x${widget.bookmarks.where((element) => element["suraNumber"] == e["surah"] && element["verseNumber"] == i).first["color"]}"))
-                : primaryColors[colorIndex],
-            height: (index == 1 || index == 2) ? 2.h : 1.95.h,
-            letterSpacing: 0.w,
-            wordSpacing: 0,
-            fontFamily: "QCF_P${index.toString().padLeft(3, "0")}",
-            fontSize: index == 1 || index == 2
-                ? 28.sp
-                : index == 145 || index == 201
-                    ? index == 532 || index == 533
-                        ? 22.5.sp
-                        : 22.4.sp
-                    : 22.9.sp,
-            fontWeight: level <= 0 ? FontWeight.normal : FontWeight.w600,
-            backgroundColor: widget.shouldHighlightText
+          Color bgColor;
+          try {
+            bgColor = widget.shouldHighlightText
                 ? (quran.getVerse(e["surah"], i) == widget.highlightVerse
                     ? highlightColors[colorIndex].withValues(alpha: .28)
                     : (selectedSpan == "${e["surah"]}-$i"
-                        ? highlightColors[colorIndex].withValues(alpha: .18)
+                        ? highlightColors[colorIndex]
+                            .withValues(alpha: .18)
                         : Colors.transparent))
                 : (selectedSpan == "${e["surah"]}-$i"
                     ? highlightColors[colorIndex].withValues(alpha: .18)
-                    : Colors.transparent),
-          ),
-          children: const [],
-        ));
+                    : Colors.transparent);
+          } catch (_) {
+            bgColor = Colors.transparent;
+          }
 
-        if (isBookmarked) {
-          spans.add(WidgetSpan(
-            alignment: PlaceholderAlignment.middle,
-            child: Icon(
-              Icons.bookmark,
-              color: Color(int.parse(
-                  "0x${widget.bookmarks.where((element) => element["suraNumber"] == e["surah"] && element["verseNumber"] == i).first["color"]}")),
+          spans.add(TextSpan(
+            recognizer: LongPressGestureRecognizer()
+              ..onLongPress = () {
+                widget.onShowAyahOptions(index, e["surah"], i);
+              }
+              ..onLongPressDown = (details) {
+                selectedSpan = "${e["surah"]}-$i";
+                setState(() {});
+              }
+              ..onLongPressUp = () {
+                selectedSpan = "";
+                setState(() {});
+              }
+              ..onLongPressCancel = () {
+                selectedSpan = "";
+                setState(() {});
+              },
+            text: text,
+            semanticsLabel: "${e["surah"]}-$i",
+            style: TextStyle(
+              color: textColor,
+              height: (index == 1 || index == 2) ? 2.h : 1.95.h,
+              letterSpacing: 0.w,
+              wordSpacing: 0,
+              fontFamily: "QCF_P${index.toString().padLeft(3, "0")}",
+              fontSize: index == 1 || index == 2
+                  ? 28.sp
+                  : index == 145 || index == 201
+                      ? index == 532 || index == 533
+                          ? 22.5.sp
+                          : 22.4.sp
+                      : 22.9.sp,
+              fontWeight: FontWeight.normal,
+              backgroundColor: bgColor,
             ),
+            children: const [],
           ));
+
+          if (isBookmarked) {
+            try {
+              final match = widget.bookmarks.where((element) =>
+                  element["suraNumber"] == e["surah"] &&
+                  element["verseNumber"] == i);
+              if (match.isNotEmpty) {
+                spans.add(WidgetSpan(
+                  alignment: PlaceholderAlignment.middle,
+                  child: Icon(
+                    Icons.bookmark,
+                    color: Color(int.parse("0x${match.first["color"]}")),
+                  ),
+                ));
+              }
+            } catch (e2) {
+              debugPrint("Bookmark icon failed ${e["surah"]}:$i - $e2");
+            }
+          }
+        } catch (e2) {
+          debugPrint("Ay ah ${e["surah"]}:$i page $index failed - $e2");
         }
       }
       return spans;
@@ -201,7 +260,7 @@ class _QuranPageViewState extends State<QuranPageView> {
         color: primaryColors[colorIndex],
         fontSize: baseFontSize,
         fontFamily: baseFontFamily,
-        fontWeight: level <= 0 ? FontWeight.normal : FontWeight.w600,
+        fontWeight: FontWeight.normal,
       ),
       children: children,
     );
@@ -324,6 +383,7 @@ class _QuranPageViewState extends State<QuranPageView> {
 
   @override
   void dispose() {
+    _readingTimer?.cancel();
     widget.pageController.removeListener(_pageControllerScrollListener);
     _transformController.removeListener(_onTransformChanged);
     _transformController.dispose();
@@ -363,10 +423,9 @@ class _QuranPageViewState extends State<QuranPageView> {
         _warmNextPrevPages(a);
         _evictFarPages(a);
         
-        // --- الإضافة الجديدة للتتبع ---
-        _readingTimer?.cancel(); // إلغاء عداد الصفحة السابقة فوراً
-        _readingTimer = Timer(const Duration(seconds: 30), () {
-          _recordPageRead();
+        _readingTimer?.cancel();
+        _readingTimer = Timer(const Duration(seconds: 10), () {
+          _recordPageRead(a);
         });
       },
       controller: widget.pageController,

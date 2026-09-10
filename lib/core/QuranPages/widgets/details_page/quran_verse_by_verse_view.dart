@@ -134,14 +134,23 @@ class _QuranVerseByVerseViewState extends State<QuranVerseByVerseView> {
                       Map e, bool isPlaying, Map? currentVersePlaying) {
                     List<InlineSpan> spans = [];
                     for (var i = e["start"]; i <= e["end"]; i++) {
+                      try {
                       if (i == 1) {
-                        spans.add(WidgetSpan(
-                            child:
-                                HeaderWidget(e: e, jsonData: widget.jsonData)));
-                        if (index != 187 && index != 1) {
+                        try {
                           spans.add(WidgetSpan(
-                              child: Basmallah(
-                                  index: getValue("quranPageolorsIndex"))));
+                              child:
+                                  HeaderWidget(e: e, jsonData: widget.jsonData)));
+                        } catch (e2) {
+                          debugPrint("Header failed ${e["surah"]}:$i - $e2");
+                        }
+                        if (index != 187 && index != 1) {
+                          try {
+                            spans.add(WidgetSpan(
+                                child: Basmallah(
+                                    index: getValue("quranPageolorsIndex"))));
+                          } catch (e2) {
+                            debugPrint("Basmallah failed $index - $e2");
+                          }
                         }
                         if (index == 187 || index == 1) {
                           spans.add(WidgetSpan(child: Container(height: 10.h)));
@@ -174,22 +183,21 @@ class _QuranVerseByVerseViewState extends State<QuranVerseByVerseView> {
                             ..onLongPressCancel = () => setState(() {
                                   selectedSpan = "";
                                 }),
-                          text: quran.getVerse(e["surah"], i),
+                          text: (() {
+                            try {
+                              return quran.getVerse(e["surah"], i);
+                            } catch (e2) {
+                              debugPrint("getVerse failed ${e["surah"]}:$i - $e2");
+                              return "";
+                            }
+                          })(),
                           style: TextStyle(
                               color: primaryColors[
                                   getValue("quranPageolorsIndex")],
                               fontSize:
                                   getValue("verseByVerseFontSize").toDouble(),
                               fontFamily: getValue("selectedFontFamily"),
-                              fontWeight: (() {
-                                final int level =
-                                    (getValue("quranBoldLevel") ?? 0) is int
-                                        ? (getValue("quranBoldLevel") ?? 0)
-                                        : 0;
-                                return level <= 0
-                                    ? FontWeight.normal
-                                    : FontWeight.w600;
-                              })(),
+                              fontWeight: FontWeight.normal,
                               backgroundColor: isHighlighted
                                   ? highlightColors[getValue("quranPageolorsIndex")]
                                       .withValues(alpha: .28)
@@ -199,8 +207,7 @@ class _QuranVerseByVerseViewState extends State<QuranVerseByVerseView> {
                                       ? Color(int.parse("0x${widget.bookmarks.firstWhere((b) => b["suraNumber"] == e["surah"] && b["verseNumber"] == i)["color"]}"))
                                           .withValues(alpha: .19)
                                       : widget.shouldHighlightText &&
-                                              quran.getVerse(e["surah"], i) ==
-                                                  widget.highlightVerse
+                                              (() { try { return quran.getVerse(e["surah"], i) == widget.highlightVerse; } catch (_) { return false; } })()
                                           ? highlightColors[getValue(
                                                   "quranPageolorsIndex")]
                                               .withValues(alpha: .25)
@@ -224,60 +231,81 @@ class _QuranVerseByVerseViewState extends State<QuranVerseByVerseView> {
                       if (widget.bookmarks.any((b) =>
                           b["suraNumber"] == e["surah"] &&
                           b["verseNumber"] == i)) {
-                        spans.add(WidgetSpan(
-                            alignment: PlaceholderAlignment.middle,
-                            child: Icon(Icons.bookmark,
-                                color: Color(int.parse(
-                                    "0x${widget.bookmarks.firstWhere((b) => b["suraNumber"] == e["surah"] && b["verseNumber"] == i)["color"]}")))));
+                        try {
+                          spans.add(WidgetSpan(
+                              alignment: PlaceholderAlignment.middle,
+                              child: Icon(Icons.bookmark,
+                                  color: Color(int.parse(
+                                      "0x${widget.bookmarks.firstWhere((b) => b["suraNumber"] == e["surah"] && b["verseNumber"] == i)["color"]}")))));
+                        } catch (e2) {
+                          debugPrint("Bookmark icon failed ${e["surah"]}:$i - $e2");
+                        }
                       }
 
-                      spans.add(WidgetSpan(
-                          child: Divider(
-                              color: Colors.grey.withValues(alpha: .2))));
+                      try {
+                        spans.add(WidgetSpan(
+                            child: Divider(
+                                color: Colors.grey.withValues(alpha: .2))));
 
-                      spans.add(WidgetSpan(
-                          child: SizedBox(
-                              width: double.infinity,
-                              child: Directionality(
-                                  textDirection: widget
-                                              .translationDataList[getValue(
-                                                  "indexOfTranslationInVerseByVerse")]
-                                              .typeInNativeLanguage ==
-                                          "العربية"
-                                      ? m.TextDirection.rtl
-                                      : m.TextDirection.ltr,
-                                  child: Builder(builder: (context) {
-                                    String translation = get_translation_data
-                                        .getVerseTranslationForVerseByVerse(
-                                            widget.dataOfCurrentTranslation,
-                                            e["surah"],
-                                            i,
-                                            widget.translationDataList[getValue(
-                                                "indexOfTranslationInVerseByVerse")]);
-                                    if (translation.contains(">")) {
-                                      return Html(data: translation, style: {
-                                        '*': Style(
-                                            fontFamily: 'cairo',
-                                            fontSize: FontSize(14.sp),
-                                            lineHeight: LineHeight(1.7.sp))
-                                      });
-                                    } else {
-                                      return Text(translation,
-                                          style: TextStyle(
-                                              color: primaryColors[getValue(
-                                                  "quranPageolorsIndex")],
-                                              fontFamily: widget
-                                                          .translationDataList[
-                                                              getValue(
-                                                                      "indexOfTranslationInVerseByVerse") ??
-                                                                  0]
-                                                          .typeInNativeLanguage ==
-                                                      "العربية"
-                                                  ? "cairo"
-                                                  : "roboto",
-                                              fontSize: 14.sp));
-                                    }
-                                  })))));
+                        spans.add(WidgetSpan(
+                            child: SizedBox(
+                                width: double.infinity,
+                                child: Directionality(
+                                    textDirection: widget
+                                                .translationDataList[getValue(
+                                                    "indexOfTranslationInVerseByVerse")]
+                                                .typeInNativeLanguage ==
+                                            "العربية"
+                                        ? m.TextDirection.rtl
+                                        : m.TextDirection.ltr,
+                                    child: Builder(builder: (context) {
+                                      try {
+                                        String translation = get_translation_data
+                                            .getVerseTranslationForVerseByVerse(
+                                                widget.dataOfCurrentTranslation,
+                                                e["surah"],
+                                                i,
+                                                widget.translationDataList[getValue(
+                                                    "indexOfTranslationInVerseByVerse")]);
+                                        if (translation.contains(">")) {
+                                          try {
+                                            return Html(data: translation, style: {
+                                              '*': Style(
+                                                  fontFamily: 'cairo',
+                                                  fontSize: FontSize(14.sp),
+                                                  lineHeight: LineHeight(1.7.sp))
+                                            });
+                                          } catch (e2) {
+                                            debugPrint("Html failed ${e["surah"]}:$i - $e2");
+                                            return Text(translation,
+                                                style: TextStyle(
+                                                    color: primaryColors[getValue("quranPageolorsIndex")],
+                                                    fontSize: 14.sp));
+                                          }
+                                        } else {
+                                          return Text(translation,
+                                              style: TextStyle(
+                                                  color: primaryColors[getValue(
+                                                      "quranPageolorsIndex")],
+                                                  fontFamily: widget
+                                                              .translationDataList[
+                                                                  getValue(
+                                                                          "indexOfTranslationInVerseByVerse") ??
+                                                                      0]
+                                                              .typeInNativeLanguage ==
+                                                          "العربية"
+                                                      ? "cairo"
+                                                      : "roboto",
+                                                  fontSize: 14.sp));
+                                        }
+                                      } catch (e2) {
+                                        debugPrint("Translation failed ${e["surah"]}:$i - $e2");
+                                        return const SizedBox.shrink();
+                                      }
+                                    })))));
+                      } catch (e2) {
+                        debugPrint("Translation block failed ${e["surah"]}:$i - $e2");
+                      }
 
                       spans.add(WidgetSpan(
                           child: Divider(
@@ -285,6 +313,9 @@ class _QuranVerseByVerseViewState extends State<QuranVerseByVerseView> {
                               color:
                                   primaryColors[getValue("quranPageolorsIndex")]
                                       .withValues(alpha: .3))));
+                      } catch (e2) {
+                        debugPrint("Ayah ${e["surah"]}:$i failed - $e2");
+                      }
                     }
                     return spans;
                   }
@@ -299,7 +330,7 @@ class _QuranVerseByVerseViewState extends State<QuranVerseByVerseView> {
                           
                           // --- إضافة التتبع الجديدة ---
                           _readingTimer?.cancel(); // إلغاء عداد الصفحة السابقة فوراً
-                          _readingTimer = Timer(const Duration(seconds: 30), () {
+                          _readingTimer = Timer(const Duration(seconds: 10), () {
                             _recordPageRead(index);
                           });
                         }

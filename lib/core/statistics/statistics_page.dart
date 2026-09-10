@@ -503,7 +503,7 @@ class _StatisticsPageState extends State<StatisticsPage> {
   }
 
   LineChartData _buildLineChartData() {
-    final data = _getChartData();
+    final data = _cachedChartData.isNotEmpty ? _cachedChartData : _getChartData();
 
     return LineChartData(
       gridData: const FlGridData(show: false),
@@ -649,9 +649,8 @@ class _StatisticsPageState extends State<StatisticsPage> {
     int totalReading =
         int.tryParse(getValue("quran_reading-totalCount")?.toString() ?? "0") ??
             0;
-    if (totalReading == 0) {
-      totalReading = int.tryParse(getValue("lastRead")?.toString() ?? "0") ?? 0;
-    }
+    // تم إزالة fallback الخاطئ الذي كان يعتبر رقم الصفحة (604) كعدد صفحات مقروءة
+    // migration: إذا كان totalReading صفر وlastRead كبير، لا نستخدمه
     int totalListeningSeconds = int.tryParse(
             getValue("quran_listening-totalSeconds")?.toString() ?? "0") ??
         0;
@@ -748,10 +747,15 @@ class _StatisticsPageState extends State<StatisticsPage> {
                   getValue("$dateKey-quran_reading-count")?.toString() ??
                       "0") ??
               0,
-          'quranListening': int.tryParse(
-                  getValue("$dateKey-quran_listening-count")?.toString() ??
-                      "0") ??
-              0,
+          'quranListening': (() {
+            final sec = int.tryParse(
+                    getValue("$dateKey-quran_listening-seconds")?.toString() ?? "0") ??
+                0;
+            final minFb = int.tryParse(
+                    getValue("$dateKey-quran_listening-count")?.toString() ?? "0") ??
+                0;
+            return sec > 0 ? (sec ~/ 60) : minFb;
+          })(),
         });
         d = d.add(const Duration(days: 1));
       }

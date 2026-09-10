@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:dio/dio.dart';
@@ -22,6 +23,8 @@ part 'player_bloc_event.dart';
 part 'player_bloc_state.dart';
 
 class PlayerBlocBloc extends Bloc<PlayerBlocEvent, PlayerBlocState> {
+  // منع التسريب: مستمع واحد فقط لحساب وقت الاستماع
+  StreamSubscription<PlayerState>? _listeningSubscription;
   PlayerBlocBloc() : super(PlayerBlocInitial()) {
     on<PlayerBlocEvent>((event, emit) async {
       if (event is StartPlaying) {
@@ -131,7 +134,9 @@ class PlayerBlocBloc extends Bloc<PlayerBlocEvent, PlayerBlocState> {
           DateTime startTime = DateTime.now();
           bool isProcessing = false;
 
-          audioPlayer.playerStateStream.listen((state) async {
+          await _listeningSubscription?.cancel();
+          _listeningSubscription =
+              audioPlayer.playerStateStream.listen((state) async {
             // ✅ تم تعديل الشرط: نحسب فقط عند التوقف الحقيقي (Pause) أو انتهاء السورة
             // استبعدنا حالة Loading أو Buffering لضمان دقة الحساب
             bool shouldCalculate = !state.playing ||

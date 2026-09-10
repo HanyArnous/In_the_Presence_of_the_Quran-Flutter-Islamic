@@ -548,6 +548,71 @@ class QuranDetailsPageState extends State<QuranDetailsPage> {
                             ],
                           ),
                           const SizedBox(height: 16),
+                          // اختيار نوع الخط
+                          Builder(builder: (context) {
+                            final selected = (getValue("selectedFontFamily") ?? "UthmanicHafs13").toString();
+                            final isPageView = getValue("alignmentType") == "pageview";
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    const Text("نوع الخط",
+                                        style: TextStyle(
+                                            fontFamily: "cairo",
+                                            fontWeight: FontWeight.bold)),
+                                    if (isPageView)
+                                      Padding(
+                                        padding: const EdgeInsets.only(right: 8),
+                                        child: Text("(يظهر في العمودي وآية بآية)",
+                                            style: TextStyle(
+                                                fontSize: 10,
+                                                color: Colors.grey[600],
+                                                fontFamily: "cairo")),
+                                      ),
+                                  ],
+                                ),
+                                const SizedBox(height: 8),
+                                Container(
+                                  decoration: BoxDecoration(
+                                    border: Border.all(color: Colors.grey.shade300),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: ExpansionTile(
+                                    title: Text(selected,
+                                        style: TextStyle(
+                                            fontFamily: selected,
+                                            fontSize: 14,
+                                            color: primaryColors[getValue("quranPageolorsIndex")])),
+                                    children: fontFamilies.map((f) {
+                                      final isSelected = f == selected;
+                                      return ListTile(
+                                        dense: true,
+                                        title: Text("بسم الله الرحمن الرحيم",
+                                            style: TextStyle(
+                                                fontFamily: f,
+                                                fontSize: 16,
+                                                color: isSelected
+                                                    ? primaryColors[getValue("quranPageolorsIndex")]
+                                                    : Colors.black87)),
+                                        subtitle: Text(f,
+                                            style: const TextStyle(fontSize: 10, fontFamily: "cairo")),
+                                        trailing: isSelected
+                                            ? Icon(Icons.check,
+                                                color: primaryColors[getValue("quranPageolorsIndex")])
+                                            : null,
+                                        onTap: () {
+                                          updateValue("selectedFontFamily", f);
+                                          setState(() {});
+                                        },
+                                      );
+                                    }).toList(),
+                                  ),
+                                ),
+                              ],
+                            );
+                          }),
+                          const SizedBox(height: 12),
                           Row(
                             children: [
                               Padding(
@@ -576,8 +641,8 @@ class QuranDetailsPageState extends State<QuranDetailsPage> {
                                           color: primaryColors[
                                               getValue("quranPageolorsIndex")]),
                                     ),
-                                    child: const Text("عريض",
-                                        style: TextStyle(fontFamily: "cairo")),
+                                    child: const Text("عريض (للعناوين فقط)",
+                                        style: TextStyle(fontFamily: "cairo", fontSize: 12)),
                                   ),
                                 ),
                               ),

@@ -154,14 +154,8 @@ class _TafseerAndTranslateSheetState extends State<TafseerAndTranslateSheet> {
                 style: TextStyle(
                   color: Colors.black,
                   fontSize: 20.sp,
-                  // wordSpacing: -1.4,
                   fontFamily: getValue("selectedFontFamily"),
-                  fontWeight: (() {
-                    final int level = (getValue("quranBoldLevel") ?? 0) is int
-                        ? (getValue("quranBoldLevel") ?? 0)
-                        : 0;
-                    return level <= 0 ? FontWeight.normal : FontWeight.w600;
-                  })(),
+                  fontWeight: FontWeight.normal,
                 ),
               ),
             ),

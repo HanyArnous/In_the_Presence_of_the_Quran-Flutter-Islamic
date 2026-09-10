@@ -194,7 +194,10 @@ class _HadithListState extends State<HadithList> {
                         ),
                       );
                     },
-                  )
+                  ),
+                  SliverToBoxAdapter(
+                    child: SizedBox(height: MediaQuery.of(context).padding.bottom + 16.h),
+                  ),
                 ],
               ));
   }

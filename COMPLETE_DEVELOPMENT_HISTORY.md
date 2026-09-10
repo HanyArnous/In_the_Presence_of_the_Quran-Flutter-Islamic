@@ -1,8 +1,8 @@
-# 📚 Complete Development History - In the Presence of the Quran App
+# 📚 Complete Development History - In the Presence of the Most Merciful App
 
 **Developer:** HANY_ARNOUS  
 **GitHub:** https://github.com/HanyArnous  
-**Project:** In the Presence of the Quran - Flutter Islamic App  
+**Project:** In the Presence of the Most Merciful - Flutter Islamic App  
 **Final Version:** 4.6.0  
 **Documentation Date:** January 27, 2026  
 
@@ -11,7 +11,7 @@
 ## 🎯 **Project Overview**
 
 ### **App Information**
-- **Name:** In the Presence of the Quran (في رحاب القرآن)
+- **Name:** In the Presence of the Most Merciful (في رحاب الرحمن)
 - **Type:** Islamic Flutter Application
 - **Platform:** Android & iOS
 - **Languages:** 9 languages supported
@@ -35,7 +35,7 @@
 ### **Phase 1: Initial Setup & Branding**
 **Date:** Early Development  
 **Changes:** 
-- ✅ App name changed from "Skoon" to "In the Presence of the Quran"
+- ✅ App name changed from "Skoon" to "In the Presence of the Most Merciful"
 - ✅ Updated all translation files (9 languages)
 - ✅ Modified Android and iOS configurations
 - ✅ Updated directory paths and references
@@ -520,7 +520,7 @@ Statistics Page ← Unified Key Retrieval ← Data Display
 ## 🌟 **Conclusion**
 
 ### **Project Success**
-The "In the Presence of the Quran" app represents a comprehensive Islamic application developed with modern Flutter technology. From its initial rebranding from "Skoon" to the final version 4.6.0, this project demonstrates:
+The "In the Presence of the Most Merciful" app represents a comprehensive Islamic application developed with modern Flutter technology. From its initial rebranding from "Skoon" to the final version 4.6.0, this project demonstrates:
 
 - **Technical Excellence**: Advanced Flutter development
 - **User-Centric Design**: Intuitive and beautiful interface
@@ -544,6 +544,6 @@ With version 4.6.0, the app is positioned for:
 
 ---
 
-**This comprehensive documentation represents the complete development journey of the "In the Presence of the Quran" app, meticulously developed by HANY_ARNOUS from initial concept to production-ready release version 4.6.0.**
+**This comprehensive documentation represents the complete development journey of the "In the Presence of the Most Merciful" app, meticulously developed by HANY_ARNOUS from initial concept to production-ready release version 4.6.0.**
 
 *Project completed with dedication, expertise, and commitment to serving the Muslim community with technology.*

@@ -792,7 +792,7 @@ class _ScreenShotPreviewPageState extends State<ScreenShotPreviewPage> {
                                   ),
                                   Expanded(
                                     child: Text(
-                                      "مشاركة من تطبيق في رحاب القراّن",
+                                      "مشاركة من تطبيق في رحاب الرحمن",
                                       textAlign: TextAlign.center,
                                       maxLines: 2,
                                       style: TextStyle(

@@ -170,7 +170,7 @@ class _HadithBooksPageState extends State<HadithBooksPage> {
                       : Colors.black87))
         ],
       ),
-      body: isLoading
+      body: SafeArea(bottom: true, child: isLoading
           ? Center(
               child: CircularProgressIndicator(
                 color: getValue("darkMode")
@@ -265,7 +265,8 @@ class _HadithBooksPageState extends State<HadithBooksPage> {
                   ),
                 );
               },
-            ),
+              ),
+      ),
     );
   }
 }

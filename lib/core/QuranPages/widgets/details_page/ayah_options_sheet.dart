@@ -559,6 +559,78 @@ class _AyahOptionsSheetState extends State<AyahOptionsSheet> {
                       ),
                     ),
                   ),
+                  SizedBox(height: 12.h),
+                  // وضع التكرار - جديد
+                  Container(
+                    padding: EdgeInsets.all(12.w),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12.r),
+                      border: Border.all(color: Colors.grey.shade200),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(Icons.repeat, size: 18, color: primaryColors[getValue("quranPageolorsIndex")]),
+                            SizedBox(width: 6.w),
+                            const Text("وضع التكرار", style: TextStyle(fontFamily: "cairo", fontWeight: FontWeight.bold, fontSize: 13)),
+                          ],
+                        ),
+                        SizedBox(height: 10.h),
+                        Wrap(
+                          spacing: 8.w,
+                          children: [
+                            ChoiceChip(
+                              label: const Text("متابعة", style: TextStyle(fontFamily: "cairo", fontSize: 12)),
+                              selected: (getValue("quran_repeatMode") ?? "continuous") == "continuous",
+                              onSelected: (_) { updateValue("quran_repeatMode", "continuous"); setState(() {}); },
+                            ),
+                            ChoiceChip(
+                              label: const Text("آية", style: TextStyle(fontFamily: "cairo", fontSize: 12)),
+                              selected: getValue("quran_repeatMode") == "ayah",
+                              onSelected: (_) { updateValue("quran_repeatMode", "ayah"); if ((getValue("quran_repeatCount") ?? 0) == 0) updateValue("quran_repeatCount", 3); setState(() {}); },
+                            ),
+                            ChoiceChip(
+                              label: const Text("صفحة", style: TextStyle(fontFamily: "cairo", fontSize: 12)),
+                              selected: getValue("quran_repeatMode") == "page",
+                              onSelected: (_) { updateValue("quran_repeatMode", "page"); if ((getValue("quran_repeatCount") ?? 0) == 0) updateValue("quran_repeatCount", 3); setState(() {}); },
+                            ),
+                            ChoiceChip(
+                              label: const Text("مرة واحدة", style: TextStyle(fontFamily: "cairo", fontSize: 12)),
+                              selected: getValue("quran_repeatMode") == "none",
+                              onSelected: (_) { updateValue("quran_repeatMode", "none"); setState(() {}); },
+                            ),
+                          ],
+                        ),
+                        if (getValue("quran_repeatMode") == "ayah" || getValue("quran_repeatMode") == "page")
+                          Padding(
+                            padding: EdgeInsets.only(top: 12.h),
+                            child: Row(
+                              children: [
+                                const Text("العدد:", style: TextStyle(fontFamily: "cairo", fontSize: 12)),
+                                Expanded(
+                                  child: Slider(
+                                    value: ((getValue("quran_repeatCount") ?? 3) as num).toDouble().clamp(1, 20),
+                                    min: 1,
+                                    max: 20,
+                                    divisions: 19,
+                                    label: "${getValue("quran_repeatCount") ?? 3}",
+                                    onChanged: (v) { updateValue("quran_repeatCount", v.toInt()); setState(() {}); },
+                                  ),
+                                ),
+                                Container(
+                                  padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
+                                  decoration: BoxDecoration(color: primaryColors[getValue("quranPageolorsIndex")].withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
+                                  child: Text("${getValue("quran_repeatCount") ?? 3}×", style: TextStyle(fontFamily: "cairo", fontWeight: FontWeight.bold)),
+                                ),
+                              ],
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
                   const SizedBox(height: 30),
                   SizedBox(height: 5.h),
                 ],

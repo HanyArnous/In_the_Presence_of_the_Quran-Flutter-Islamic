@@ -265,7 +265,7 @@ class _AzkarHomePageState extends State<AzkarHomePage> {
       child: Scaffold(
         backgroundColor:
             getValue("darkMode") ? quranPagesColorDark : quranPagesColorLight,
-        body: CustomScrollView(
+        body: SafeArea(bottom: true, child: CustomScrollView(
           slivers: <Widget>[
             SliverAppBar(
               floating: true,
@@ -439,6 +439,7 @@ class _AzkarHomePageState extends State<AzkarHomePage> {
                   );
                 }),
           ],
+        ),
         ),
       ),
     );

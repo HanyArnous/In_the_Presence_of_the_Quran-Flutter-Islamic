@@ -257,11 +257,13 @@ class _StatisticsPageState extends State<StatisticsPage> {
             ),
           ],
         ),
-        body: RefreshIndicator(
-          onRefresh: () async => _refreshStats(),
-          child: SingleChildScrollView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            padding: EdgeInsets.all(16.w),
+        body: SafeArea(
+          bottom: true,
+          child: RefreshIndicator(
+            onRefresh: () async => _refreshStats(),
+            child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: EdgeInsets.fromLTRB(16.w, 16.w, 16.w, 16.w + MediaQuery.of(context).padding.bottom + 24.h),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -278,6 +280,7 @@ class _StatisticsPageState extends State<StatisticsPage> {
                 _buildTotalsInfo(),
               ],
             ),
+          ),
           ),
         ),
       ),

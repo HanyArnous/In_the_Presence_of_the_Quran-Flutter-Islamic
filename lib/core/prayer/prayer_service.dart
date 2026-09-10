@@ -14,7 +14,27 @@ import 'package:quran/quran.dart' as quran;
 
 class PrayerService {
   static final FlutterLocalNotificationsPlugin _plugin = FlutterLocalNotificationsPlugin();
+  static final AudioPlayer _azanPlayer = AudioPlayer();
   static bool _tzInitialized = false;
+
+  static Future<void> initNotifications() async {
+    const AndroidInitializationSettings initAndroid = AndroidInitializationSettings('@mipmap/ic_launcher');
+    await _plugin.initialize(
+      const InitializationSettings(android: initAndroid),
+      onDidReceiveNotificationResponse: (details) async {
+        if (details.actionId == 'stop_azan') {
+          await stopAzan();
+        }
+      },
+    );
+  }
+
+  static Future<void> stopAzan() async {
+    try { await _azanPlayer.stop(); } catch (_) {}
+    try { await _plugin.cancel(9999); } catch (_) {}
+    // إيقاف صوت النظام عبر إلغاء الإشعارات
+    await cancelAllPrayers();
+  }
 
   static Future<void> initTimezone() async {
     if (_tzInitialized) return;
@@ -245,28 +265,33 @@ class PrayerService {
         androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
       );
     } catch (e) {
-      try {
-        await _plugin.zonedSchedule(
-          id,
-          'حان وقت $arabic',
-          body,
-          tz.TZDateTime.from(time, tz.local),
-          const NotificationDetails(
-            android: AndroidNotificationDetails(
-              'prayer_channel',
-              'Prayer Notifications',
-              channelDescription: 'Prayer time notifications',
-              importance: Importance.max,
-              priority: Priority.high,
-              playSound: true,
-              category: AndroidNotificationCategory.alarm,
-            ),
+    try {
+      await _plugin.zonedSchedule(
+        id,
+        'حان وقت $arabic',
+        body,
+        tz.TZDateTime.from(time, tz.local),
+        NotificationDetails(
+          android: AndroidNotificationDetails(
+            'prayer_$englishName',
+            'Prayer $arabic',
+            channelDescription: 'Prayer $arabic notifications',
+            importance: Importance.max,
+            priority: Priority.high,
+            playSound: true,
+            sound: const RawResourceAndroidNotificationSound('azan'),
+            category: AndroidNotificationCategory.alarm,
+            visibility: NotificationVisibility.public,
+            fullScreenIntent: true,
+            timeoutAfter: 60000,
+            actions: const [AndroidNotificationAction('stop_azan', 'إيقاف', cancelNotification: true, showsUserInterface: true)],
           ),
-          androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-        );
-      } catch (_) {
-        debugPrint("Schedule $englishName failed: $e");
-      }
+        ),
+        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+      );
+    } catch (e) {
+      debugPrint("Schedule $englishName failed: $e");
+    }
     }
   }
 
@@ -290,21 +315,18 @@ class PrayerService {
       title = 'اختبار - ${getArabicName(next['name']!)}';
       body = 'الوقت: ${next['time']} - سيتم تشغيل الأذان';
     }
-    // 1) إظهار إشعار فوراً
     await _plugin.show(
       9999,
       title,
       body,
-      const NotificationDetails(android: AndroidNotificationDetails('prayer_test', 'Test', importance: Importance.max, priority: Priority.high, playSound: true, sound: RawResourceAndroidNotificationSound('azan'))),
+      const NotificationDetails(android: AndroidNotificationDetails('prayer_test', 'Test', importance: Importance.max, priority: Priority.high, playSound: true, sound: RawResourceAndroidNotificationSound('azan'), actions: [AndroidNotificationAction('stop_azan', 'إيقاف', cancelNotification: true)])),
     );
-    // 2) تشغيل صوت الأذان فعلياً offline عبر AudioPlayer
     try {
-      final player = AudioPlayer();
-      await player.play(AssetSource('audio/azan.mp3'));
-      // إيقاف بعد 20 ثانية (لمنع التشغيل الطويل في الاختبار)
-      Future.delayed(const Duration(seconds: 20), () {
-        player.stop();
-        player.dispose();
+      await _azanPlayer.stop();
+      await _azanPlayer.setReleaseMode(ReleaseMode.stop);
+      await _azanPlayer.play(AssetSource('audio/azan.mp3'));
+      Future.delayed(const Duration(seconds: 25), () {
+        _azanPlayer.stop();
       });
     } catch (e) {
       debugPrint("Azan audio play failed: $e");
@@ -313,11 +335,11 @@ class PrayerService {
 
   static Future<void> playAzanNow() async {
     try {
-      final player = AudioPlayer();
-      await player.play(AssetSource('audio/azan.mp3'));
+      await _azanPlayer.stop();
+      await _azanPlayer.setReleaseMode(ReleaseMode.stop);
+      await _azanPlayer.play(AssetSource('audio/azan.mp3'));
       Future.delayed(const Duration(seconds: 30), () {
-        player.stop();
-        player.dispose();
+        _azanPlayer.stop();
       });
     } catch (e) {
       debugPrint("playAzanNow failed: $e");

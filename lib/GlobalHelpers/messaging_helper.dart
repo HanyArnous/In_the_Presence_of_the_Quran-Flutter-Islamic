@@ -252,12 +252,20 @@ Future<void> _showNotification(
             sound: RawResourceAndroidNotificationSound(isPrayer ? 'azan' : 'notification'),
             enableVibration: true,
             visibility: NotificationVisibility.public,
+            category: isPrayer ? AndroidNotificationCategory.alarm : AndroidNotificationCategory.reminder,
+            fullScreenIntent: isPrayer,
+            timeoutAfter: isPrayer ? 60000 : null,
             styleInformation: BigTextStyleInformation(
               body,
               htmlFormatBigText: false,
               contentTitle: title,
               htmlFormatContentTitle: false,
             ),
+            actions: isPrayer
+                ? [
+                    const AndroidNotificationAction('stop_azan', 'إيقاف', cancelNotification: true, showsUserInterface: true),
+                  ]
+                : null,
           )));
 }
 

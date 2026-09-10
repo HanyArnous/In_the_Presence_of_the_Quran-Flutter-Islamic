@@ -604,6 +604,7 @@ class _RecitersSurahListPageState extends State<RecitersSurahListPage> {
           ),
           body: Container(
             child: ListView.separated(
+              padding: EdgeInsets.only(bottom: MediaQuery.of(context).padding.bottom + 16.h),
               physics: const BouncingScrollPhysics(),
               separatorBuilder: (context, index) => const Divider(),
               itemCount: filteredSurahs.isNotEmpty

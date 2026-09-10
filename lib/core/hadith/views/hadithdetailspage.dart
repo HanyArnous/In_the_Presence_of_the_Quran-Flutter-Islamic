@@ -133,7 +133,7 @@ class _HadithDetailsPageState extends State<HadithDetailsPage> {
             ),
           ),
           // backgroundColor: darkPrimaryColor,
-          body: Center(
+          body: SafeArea(bottom: true, child: Center(
             child: isLoading
                 ? const CircularProgressIndicator()
                 : Container(
@@ -564,6 +564,7 @@ class _HadithDetailsPageState extends State<HadithDetailsPage> {
                     ],
                   )),
           ),
+        ),
         ),
       ),
     );

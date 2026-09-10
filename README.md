@@ -1,4 +1,4 @@
-# In the Presence of the Quran - Flutter Islamic App
+# In the Presence of the Most Merciful - Flutter Islamic App
 
 <div style="display: flex; justify-content: space-around;">
   <img src="assets/1.jpeg" alt="1" width="300">
@@ -17,7 +17,7 @@
 
 ## Overview
 
-In the Presence of the Quran is a comprehensive Islamic app built with Flutter. It offers a variety of features including Quran, Hadith, Quran audio, radio, the 99 names of Allah, Duaa, and more.
+In the Presence of the Most Merciful is a comprehensive Islamic app built with Flutter. It offers a variety of features including Quran, Hadith, Quran audio, radio, the 99 names of Allah, Duaa, and more.
 ## Demo Apk
 
 [Download Demo APK](https://www.mediafire.com/file/id5r5jfqiw3ucmn/QuranKareemV4.5.apk/file)  <!-- Replace # with your actual APK link -->
@@ -75,7 +75,7 @@ In the Presence of the Quran is a comprehensive Islamic app built with Flutter. 
 تحسين تجربة المستخدم (UX): تعديلات جمالية وتسهيلات في التنقل تتناسب مع الميزات الجديدة.
 
 🚀 Getting Started
-To get started with the updated Skoon (In the Presence of the Quran) app, follow these steps:
+To get started with the updated Skoon (In the Presence of the Most Merciful) app, follow these steps:
 
 1. Clone the repository
 Use the latest version (V4.6) which includes the new Hive database and advanced statistics:

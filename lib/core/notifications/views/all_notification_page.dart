@@ -41,7 +41,9 @@ class _NotificationsPageState extends State<NotificationsPage> {
           ),
         ),
       ),
-      body: Container(
+      body: SafeArea(
+        bottom: true,
+        child: Container(
         color:
             getValue("darkMode") ? quranPagesColorDark : quranPagesColorLight,
         child: ListView(
@@ -982,6 +984,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
               ),
             ),
           ],
+        ),
         ),
       ),
     );

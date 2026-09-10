@@ -374,7 +374,7 @@ class _DownloadsPageState extends State<DownloadsPage> {
       "hani_rifai": "هاني الرفاعي",
       
       // معرفات إضافية شائعة
-      "In_the_Presence_of_the_Quran": "In the Presence of the Quran",
+      "In_the_Presence_of_the_Quran": "In the Presence of the Most Merciful",
       "quran": "قرآن كريم",
       "arnous": "أرنوس",
       "abdulrahman_sudais": "عبد الرحمن السديس",

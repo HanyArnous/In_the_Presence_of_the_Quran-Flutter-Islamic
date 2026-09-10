@@ -2,7 +2,7 @@
 
 **Developer:** HANY_ARNOUS  
 **GitHub:** https://github.com/HanyArnous  
-**Project:** In the Presence of the Quran - Flutter Islamic App  
+**Project:** In the Presence of the Most Merciful - Flutter Islamic App  
 **Version:** 4.6.0  
 **Date:** January 27, 2026  
 
@@ -17,7 +17,7 @@
 **المطور:** HANY_ARNOUS  
 **GitHub:** https://github.com/HanyArnous  
 **البريد:** HANYHOSSAM1987@gmail.com  
-**المشروع:** In the Presence of the Quran - Flutter Islamic App  
+**المشروع:** In the Presence of the Most Merciful - Flutter Islamic App  
 **الإصدار:** 4.6.0  
 **الحالة:** ✅ **جاهز للرفع على GitHub**
 

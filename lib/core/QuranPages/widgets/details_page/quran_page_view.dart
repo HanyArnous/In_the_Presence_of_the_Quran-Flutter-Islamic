@@ -594,7 +594,7 @@ class _QuranPageViewState extends State<QuranPageView> {
                                           maxScale: 4.0,
                                           boundaryMargin: const EdgeInsets.all(double.infinity),
                                           clipBehavior: Clip.none,
-                                          panEnabled: isZoomed,
+                                          panEnabled: true,
                                           scaleEnabled: true,
                                           onInteractionEnd: (details) {
                                             if (_transformController.value.getMaxScaleOnAxis() <= 1.01) {
@@ -651,7 +651,7 @@ class _QuranPageViewState extends State<QuranPageView> {
                                     maxScale: 4.0,
                                     boundaryMargin: const EdgeInsets.all(double.infinity),
                                     clipBehavior: Clip.none,
-                                    panEnabled: isZoomed,
+                                    panEnabled: true,
                                     scaleEnabled: true,
                                     onInteractionEnd: (details) {
                                       if (_transformController.value.getMaxScaleOnAxis() <= 1.01) {

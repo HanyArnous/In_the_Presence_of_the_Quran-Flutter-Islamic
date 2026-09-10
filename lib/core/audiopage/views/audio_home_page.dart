@@ -653,7 +653,7 @@ class _RecitersPageState extends State<RecitersPage> {
           ),
         ),
       ),
-      body: isLoading
+      body: SafeArea(bottom: true, child: isLoading
           ? const Center(
               child: CircularProgressIndicator(color: darkPrimaryColor),
             )
@@ -940,7 +940,8 @@ class _RecitersPageState extends State<RecitersPage> {
                       ));
                 },
               ),
-            ),
+              ),
+      ),
     );
   }
 }

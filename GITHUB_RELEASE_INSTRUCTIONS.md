@@ -29,7 +29,7 @@ git commit -m "Version 4.6.0 - Updated signing key and version number..."
 
 ### **4. Git Tag Created**
 ```bash
-git tag -a v4.6.0 -m "Version 4.6.0 Release - In the Presence of the Quran..."
+git tag -a v4.6.0 -m "Version 4.6.0 Release - In the Presence of the Most Merciful..."
 ```
 
 ---
@@ -60,7 +60,7 @@ git push origin v4.6.0
 - **Performance:** Enhanced build speed and optimization
 
 ### 🔐 Security Updates
-- **New Signing Key:** Created dedicated signing key for "In the Presence of the Quran"
+- **New Signing Key:** Created dedicated signing key for "In the Presence of the Most Merciful"
 - **Certificate:** 10,000-day validity certificate
 - **Developer:** HANY_ARNOUS
 - **Key Alias:** quranpresence

@@ -164,10 +164,10 @@ defaultConfig {
 
 **Developer:** HANY_ARNOUS  
 **GitHub:** https://github.com/HanyArnous  
-**Project:** In the Presence of the Quran - Flutter Islamic App  
+**Project:** In the Presence of the Most Merciful - Flutter Islamic App  
 **Version:** 4.6.0  
 **Status:** Ready for testing and production deployment
 
 ---
 
-*This documentation was created by HANY_ARNOUS for the version 4.6.0 release of the In the Presence of the Quran Islamic application.*
+*This documentation was created by HANY_ARNOUS for the version 4.6.0 release of the In the Presence of the Most Merciful Islamic application.*

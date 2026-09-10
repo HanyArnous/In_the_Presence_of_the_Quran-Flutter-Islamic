@@ -67,7 +67,7 @@ Version 4.6.0 - Updated Signing Key & Performance Improvements
 - **Performance:** Enhanced build speed and optimization
 
 ### 🔐 Security Updates
-- **New Signing Key:** Created dedicated signing key for "In the Presence of the Quran"
+- **New Signing Key:** Created dedicated signing key for "In the Presence of the Most Merciful"
 - **Certificate:** 10,000-day validity certificate
 - **Developer:** HANY_ARNOUS
 - **Key Alias:** quranpresence

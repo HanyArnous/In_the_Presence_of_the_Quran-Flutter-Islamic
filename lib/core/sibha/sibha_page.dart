@@ -766,40 +766,49 @@ class _SibhaPageState extends State<SibhaPage> {
                         _playTapSound();
                       }
 
-                      // التحقق من وجود قيمة max أو استخدام القيمة الافتراضية
                       int maxInt;
                       if (maxVal != null) {
                         maxInt = maxVal as int;
                       } else {
-                        // استخدام القيمة الافتراضية إذا لم يوجد محفوظ
-                        maxInt = currentTasbeeh.defaultCount ??
-                            33; // استخدام قيمة افتراضية آمنة
-                        // حفظ القيمة الافتراضية للاستخدام المستقبلي
+                        maxInt = currentTasbeeh.defaultCount ?? 33;
                         updateValue("${idx}max", maxInt);
                       }
 
                       if (current >= maxInt) {
                         HapticFeedback.heavyImpact();
+                        if (_tapSoundEnabled) _playTapSound();
+                        if (tasbeehList.length <= 1) {
+                          HapticFeedback.vibrate();
+                          setState(() {});
+                          return;
+                        }
+                        _moveToNextTasbeeh();
                         setState(() {});
                         return;
                       }
                       final next = current + 1;
                       updateValue("${idx}number", next);
 
-                      // --- الإضافة للإحصائيات ---
                       final dateKey =
                           DateFormat('yyyy-MM-dd').format(DateTime.now());
-                      // تحديث اليومي
                       int daily = getValue("$dateKey-tasbeeh-count") ?? 0;
                       updateValue("$dateKey-tasbeeh-count", daily + 1);
-                      // تحديث الإجمالي
                       int total = getValue("tasbeeh-totalCount") ?? 0;
                       updateValue("tasbeeh-totalCount", total + 1);
 
                       if (next == maxInt) {
                         HapticFeedback.mediumImpact();
-                        // الانتقال التلقائي للذكر التالي بعد إكمال العدد
-                        _moveToNextTasbeeh();
+                        if (_tapSoundEnabled) {
+                          _playTapSound();
+                          Future.delayed(const Duration(milliseconds: 100), () => _playTapSound());
+                        }
+                        if (tasbeehList.length == 1) {
+                          HapticFeedback.heavyImpact();
+                        } else {
+                          Future.delayed(const Duration(milliseconds: 300), () {
+                            if (mounted) _moveToNextTasbeeh();
+                          });
+                        }
                       }
                       setState(() {});
                     },

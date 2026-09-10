@@ -1,5 +1,5 @@
 name: nabd
-description: في رحاب القرآن - Quran, Azkar, Qibla, Prayer Times, Hadith and Tafseer. In the Presence of the Quran.
+description: في رحاب الرحمن - Quran, Azkar, Qibla, Prayer Times, Hadith and Tafseer. In the Presence of the Most Merciful.
 
 
 
@@ -194,38 +194,13 @@ flutter:
       fonts:
         - asset: assets/fonts/qaloon.ttf
 
-    - family: "pdsm"
-      fonts:
-        - asset: assets/fonts/pdms.otf
-    - family: cairo
-      fonts:
-        - asset: assets/fonts/Cairo-Regular.ttf
-        - asset: assets/fonts/Cairo-Bold.ttf
-          weight: 700
-    - family: "noor ehuda"
-      fonts:
-        - asset: assets/fonts/noorehuda-org.ttf
-
-    - family: "hafs-nastaleeq-ver10-org"
-      fonts:
-        - asset: assets/fonts/hafs-nastaleeq-ver10-org.otf
     - family: "hafs-smart-07"
       fonts:
         - asset: assets/fonts/hafs-smart-07.woff
 
-    - family: "jomhuria-regular-full-org"
-      fonts:
-        - asset: assets/fonts/jomhuria-regular-full-org.ttf
-
     - family: "mada-regular-full"
       fonts:
         - asset: assets/fonts/mada-regular-full.ttf
-    - family: "markazi-text-regular-full-org"
-      fonts:
-        - asset: assets/fonts/markazi-text-regular-full-org.ttf
-    - family: "noto-kufi-arabic-regular-full"
-      fonts:
-        - asset: assets/fonts/noto-kufi-arabic-regular-full.ttf
 
     - family: "qumbul-v7-full"
       fonts:
@@ -241,6 +216,12 @@ flutter:
     - family: "arsura"
       fonts:
         - asset: assets/fonts/arsura.ttf
+
+    - family: cairo
+      fonts:
+        - asset: assets/fonts/Cairo-Regular.ttf
+        - asset: assets/fonts/Cairo-Bold.ttf
+          weight: 700
 
     - family: "KFGQPC Uthmanic Script HAFS Regular"
       fonts:

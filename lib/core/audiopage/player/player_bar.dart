@@ -486,16 +486,16 @@ class _PlayerBarState extends State<PlayerBar> with AutomaticKeepAliveClientMixi
                                                 opacity: .5,
                                                 image: AssetImage(
                                                     "assets/images/framee.png"))),
-                                        child: Column(
+                                        child: SafeArea(
+                                          bottom: false,
+                                          child: Column(
                                           crossAxisAlignment:
                                               CrossAxisAlignment.center,
                                           mainAxisAlignment:
                                               MainAxisAlignment.start,
-                                          // mainAxisAlignment:
-                                          //     MainAxisAlignment.center,
                                           children: [
                                             SizedBox(
-                                              height: 35.h,
+                                              height: 8.h,
                                             ),
                                             SizedBox(
                                               width: MediaQuery.of(context)
@@ -1140,6 +1140,7 @@ class _PlayerBarState extends State<PlayerBar> with AutomaticKeepAliveClientMixi
                                                 ),
                                               )
                                           ],
+                                        ),
                                         ),
                                       ),
                                     ),

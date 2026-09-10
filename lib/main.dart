@@ -73,7 +73,7 @@ class MyApp extends StatelessWidget {
               final isDark = Hive.box("name").get("darkMode") == true;
               return MaterialApp(
                 debugShowCheckedModeBanner: false,
-                title: 'في رحاب القرآن',
+                title: 'في رحاب الرحمن',
                 localizationsDelegates: context.localizationDelegates,
                 supportedLocales: context.supportedLocales,
                 locale: context.locale,

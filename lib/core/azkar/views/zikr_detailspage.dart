@@ -670,17 +670,29 @@ class _ZikrPageState extends State<ZikrPage> {
           if (savedMax != null) {
             final maxInt = savedMax as int;
             if (count >= maxInt) {
-              // تحديث المتغير المحلي إلى maxInt لضمان الاتساق
               count = maxInt;
               updateValue("${widget.zikr.category}-$idx-count", maxInt);
-              HapticFeedback.vibrate();
-              // انتقال تلقائي إلى الذكر التالي عند الاكتمال
+              HapticFeedback.heavyImpact();
+              if (_tapSoundEnabled) _playTapSound();
+              if (_allAzkar.length <= 1) {
+                HapticFeedback.vibrate();
+                setState(() {});
+                return;
+              }
               if (idx + 1 < _allAzkar.length) {
                 final newIdx = idx + 1;
                 updateValue("${widget.zikr.category}zikrIndex", newIdx);
-                // تصفير عدّاد الذكر الجديد وإعادة تحميله
                 updateValue("${widget.zikr.category}-$newIdx-count", 0);
                 _loadCountersForIndex(newIdx);
+                if (_tapSoundEnabled) {
+                  Future.delayed(const Duration(milliseconds: 100), () => _playTapSound());
+                }
+              } else {
+                // آخر ذكر في القائمة - إعادة للبداية مع تنبيه
+                HapticFeedback.heavyImpact();
+                if (_tapSoundEnabled) _playTapSound();
+                updateValue("${widget.zikr.category}zikrIndex", 0);
+                _loadCountersForIndex(0);
               }
               setState(() {});
               return;
@@ -690,9 +702,34 @@ class _ZikrPageState extends State<ZikrPage> {
           } else {
             count++;
           }
-          // حفظ العداد الحالي (إذا لم يصل إلى الحد)
           updateValue("${widget.zikr.category}-$idx-count", count);
           _updateAzkarStats(widget.zikr.category, idx, 1);
+
+          // إذا وصل للحد بعد الزيادة، انتقل تلقائيا
+          final effectiveMax = savedMax as int? ?? currentMax ?? _allAzkar[idx].count;
+          if (count >= effectiveMax) {
+            HapticFeedback.mediumImpact();
+            if (_tapSoundEnabled) {
+              Future.delayed(const Duration(milliseconds: 100), () => _playTapSound());
+            }
+            if (_allAzkar.length > 1) {
+              Future.delayed(const Duration(milliseconds: 300), () {
+                if (!mounted) return;
+                if (idx + 1 < _allAzkar.length) {
+                  updateValue("${widget.zikr.category}zikrIndex", idx + 1);
+                  updateValue("${widget.zikr.category}-${idx + 1}-count", 0);
+                  _loadCountersForIndex(idx + 1);
+                  setState(() {});
+                } else {
+                  updateValue("${widget.zikr.category}zikrIndex", 0);
+                  _loadCountersForIndex(0);
+                  setState(() {});
+                }
+              });
+            } else {
+              HapticFeedback.heavyImpact();
+            }
+          }
 
           setState(() {});
         },

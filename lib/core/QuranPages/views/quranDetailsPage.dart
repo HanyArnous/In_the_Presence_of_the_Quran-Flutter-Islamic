@@ -15,6 +15,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:nabd/GlobalHelpers/constants.dart';
 import 'package:nabd/GlobalHelpers/hive_helper.dart';
 
@@ -48,7 +49,7 @@ class QuranDetailsPage extends StatefulWidget {
   var shouldHighlightText;
   var highlightVerse;
   var shouldHighlightSura;
-  // var highlighSurah;
+  bool fromKhatma;
   QuranDetailsPage(
       {super.key,
       required this.pageNumber,
@@ -56,7 +57,8 @@ class QuranDetailsPage extends StatefulWidget {
       required this.shouldHighlightText,
       required this.highlightVerse,
       required this.quarterJsonData,
-      required this.shouldHighlightSura});
+      required this.shouldHighlightSura,
+      this.fromKhatma = false});
 
   @override
   State<QuranDetailsPage> createState() => QuranDetailsPageState();
@@ -732,7 +734,51 @@ class QuranDetailsPageState extends State<QuranDetailsPage> {
               );
             }
           }),
-        ),
+        bottomNavigationBar: widget.fromKhatma
+            ? SafeArea(
+                child: Padding(
+                  padding: EdgeInsets.all(12.w),
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      final currentPage = index;
+                      final today = DateTime.now();
+                      final dateKey = "${today.year.toString().padLeft(4,'0')}-${today.month.toString().padLeft(2,'0')}-${today.day.toString().padLeft(2,'0')}";
+                      List<dynamic> existing = getValue("$dateKey-quran_reading-pages") ?? [];
+                      Set<int> pagesSet = existing.map((e) => int.tryParse(e.toString()) ?? -1).where((e) => e > 0).toSet();
+                      bool isNew = !pagesSet.contains(currentPage);
+                      if (isNew) {
+                        pagesSet.add(currentPage);
+                        updateValue("$dateKey-quran_reading-pages", pagesSet.toList());
+                        updateValue("$dateKey-quran_reading-count", pagesSet.length);
+                        final total = getValue("quran_reading-totalCount") ?? 0;
+                        updateValue("quran_reading-totalCount", (total as num) + 1);
+                      }
+                      final goal = getValue("khatma_goal");
+                      if (goal is Map) {
+                        int startPage = (goal['startPage'] as int?) ?? 1;
+                        if (currentPage >= startPage) {
+                          List<dynamic> khatmaPages = getValue("khatma_pages_read") ?? [];
+                          Set<int> khatmaSet = khatmaPages.map((e) => int.tryParse(e.toString()) ?? -1).where((e) => e >= startPage).toSet();
+                          bool isNewKhatma = !khatmaSet.contains(currentPage);
+                          if (isNewKhatma) {
+                            khatmaSet.add(currentPage);
+                            updateValue("khatma_pages_read", khatmaSet.toList());
+                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("تم تأكيد قراءة صفحة $currentPage للختمة ✓", style: const TextStyle(fontFamily: "cairo")), backgroundColor: const Color(0xff6B8E4E)));
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("صفحة $currentPage مسجلة مسبقاً", style: const TextStyle(fontFamily: "cairo"))));
+                          }
+                        }
+                      }
+                      HapticFeedback.mediumImpact();
+                    },
+                    icon: const Icon(Icons.check_circle, color: Colors.white),
+                    label: const Text("تأكيد الانتهاء من هذه الصفحة للختمة", style: TextStyle(fontFamily: "cairo", fontWeight: FontWeight.bold)),
+                    style: ElevatedButton.styleFrom(backgroundColor: const Color(0xff6B8E4E), foregroundColor: Colors.white, minimumSize: Size(double.infinity, 48.h), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.r))),
+                  ),
+                ),
+              )
+            : null,
+      ),
       ),
     );
   }

@@ -193,7 +193,7 @@ class _KhatmaPageState extends State<KhatmaPage> {
             jData ??= [];
             qData ??= [];
             if (!mounted) return;
-            Navigator.push(context, MaterialPageRoute(builder: (_) => QuranDetailsPage(pageNumber: page, jsonData: jData, quarterJsonData: qData, shouldHighlightText: false, highlightVerse: null, shouldHighlightSura: false)));
+            Navigator.push(context, MaterialPageRoute(builder: (_) => QuranDetailsPage(pageNumber: page, jsonData: jData, quarterJsonData: qData, shouldHighlightText: false, highlightVerse: null, shouldHighlightSura: false, fromKhatma: true)));
           },
           icon: const Icon(Icons.auto_stories),
           label: const Text("متابعة القراءة", style: TextStyle(fontFamily: "cairo")),
@@ -285,7 +285,7 @@ class _KhatmaPageState extends State<KhatmaPage> {
                       qData = json.decode(str);
                     } catch (_) {}
                     if (!mounted) return;
-                    Navigator.push(context, MaterialPageRoute(builder: (_) => QuranDetailsPage(pageNumber: pageNum, jsonData: jData ?? [], quarterJsonData: qData ?? [], shouldHighlightText: false, highlightVerse: null, shouldHighlightSura: false)));
+                    Navigator.push(context, MaterialPageRoute(builder: (_) => QuranDetailsPage(pageNumber: pageNum, jsonData: jData ?? [], quarterJsonData: qData ?? [], shouldHighlightText: false, highlightVerse: null, shouldHighlightSura: false, fromKhatma: true)));
                   },
                   child: Container(
                     decoration: BoxDecoration(
@@ -368,7 +368,7 @@ class _KhatmaPageState extends State<KhatmaPage> {
                           try { final str = await rootBundle.loadString('assets/json/surahs.json'); jData = json.decode(str); } catch (_) {}
                           try { final str = await rootBundle.loadString('assets/json/quarters.json'); qData = json.decode(str); } catch (_) {}
                           if (!mounted) return;
-                          Navigator.push(context, MaterialPageRoute(builder: (_) => QuranDetailsPage(pageNumber: p, jsonData: jData ?? [], quarterJsonData: qData ?? [], shouldHighlightText: false, highlightVerse: null, shouldHighlightSura: false)));
+                          Navigator.push(context, MaterialPageRoute(builder: (_) => QuranDetailsPage(pageNumber: p, jsonData: jData ?? [], quarterJsonData: qData ?? [], shouldHighlightText: false, highlightVerse: null, shouldHighlightSura: false, fromKhatma: true)));
                         },
                         child: Container(
                           padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),

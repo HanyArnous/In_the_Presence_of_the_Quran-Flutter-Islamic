@@ -103,6 +103,8 @@ dependencies:
   media_store_plus:
   syncfusion_flutter_sliders: 
   adhan:
+  timezone: ^0.10.1
+  flutter_timezone: ^4.1.0
   flutter_overlay_window: 
   workmanager:
   flutter_colorpicker: 

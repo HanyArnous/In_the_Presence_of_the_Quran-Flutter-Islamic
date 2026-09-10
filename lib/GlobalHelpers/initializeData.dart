@@ -48,6 +48,10 @@ initHiveValues() async {
   nullValidator("indexOfTranslation", 0);
   nullValidator("indexOfTranslationInVerseByVerse", 1);
   nullValidator("darkMode", false);
+  // Prayer & Khatma
+  nullValidator("prayer_method", "egyptian");
+  nullValidator("prayer_madhab", "shafi");
+  nullValidator("prayer_enabled", {"Fajr":true,"Dhuhr":true,"Asr":true,"Maghrib":true,"Isha":true});
 
   nullValidator("starredRadios", "[]");
   nullValidator("bookmarks", "[]");

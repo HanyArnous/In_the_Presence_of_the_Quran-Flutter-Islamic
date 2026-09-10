@@ -18,6 +18,8 @@ import 'package:geolocator/geolocator.dart';
 import 'package:hijri/hijri_calendar.dart';
 import 'package:iconsax/iconsax.dart';
 import 'package:nabd/GlobalHelpers/hive_helper.dart';
+import 'package:nabd/core/prayer/prayer_settings_page.dart';
+import 'package:nabd/core/khatma/khatma_page.dart';
 import 'package:nabd/blocs/bloc/bloc/player_bar_bloc.dart';
 import 'package:nabd/blocs/bloc/hadith_bloc.dart';
 import 'package:nabd/blocs/bloc/player_bloc_bloc.dart';
@@ -1502,6 +1504,28 @@ class _HomeState extends State<Home>
                                                     },
                                                     imagePath:
                                                         "assets/images/statistics.png"),
+                                                SuperellipseButton(
+                                                    text: "الأذان",
+                                                    onPressed: () {
+                                                      Navigator.push(
+                                                          context,
+                                                          CupertinoPageRoute(
+                                                              builder: (builder) =>
+                                                                  const PrayerSettingsPage()));
+                                                    },
+                                                    imagePath:
+                                                        "assets/images/azan.jpg"),
+                                                SuperellipseButton(
+                                                    text: "ختمة",
+                                                    onPressed: () {
+                                                      Navigator.push(
+                                                          context,
+                                                          CupertinoPageRoute(
+                                                              builder: (builder) =>
+                                                                  const KhatmaPage()));
+                                                    },
+                                                    imagePath:
+                                                        "assets/images/quranlogo.png"),
                                                 SuperellipseButton(
                                                     text: "downloaded".tr(),
                                                     onPressed: () async {

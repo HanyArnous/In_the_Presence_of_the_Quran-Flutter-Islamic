@@ -87,18 +87,6 @@ class _QuranVerseByVerseViewState extends State<QuranVerseByVerseView> {
       updateValue("$dateKey-quran_reading-count", pagesSet.length);
       final totalCount = getValue("quran_reading-totalCount") ?? 0;
       updateValue("quran_reading-totalCount", (totalCount as num) + 1);
-      final goal = getValue("khatma_goal");
-      if (goal is Map) {
-        int startPage = (goal['startPage'] as int?) ?? 1;
-        if (pageNumber >= startPage) {
-          List<dynamic> khatmaPages = getValue("khatma_pages_read") ?? [];
-          Set<int> khatmaSet = khatmaPages.map((e) => int.tryParse(e.toString()) ?? -1).where((e) => e >= startPage).toSet();
-          if (!khatmaSet.contains(pageNumber)) {
-            khatmaSet.add(pageNumber);
-            updateValue("khatma_pages_read", khatmaSet.toList());
-          }
-        }
-      }
     }
     _lastRecordedPage = pageNumber;
   }

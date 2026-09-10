@@ -20,6 +20,7 @@ import 'package:iconsax/iconsax.dart';
 import 'package:nabd/GlobalHelpers/hive_helper.dart';
 import 'package:nabd/core/prayer/prayer_settings_page.dart';
 import 'package:nabd/core/khatma/khatma_page.dart';
+import 'package:nabd/core/backup/backup_page.dart';
 import 'package:nabd/blocs/bloc/bloc/player_bar_bloc.dart';
 import 'package:nabd/blocs/bloc/hadith_bloc.dart';
 import 'package:nabd/blocs/bloc/player_bloc_bloc.dart';
@@ -1526,6 +1527,17 @@ class _HomeState extends State<Home>
                                                     },
                                                     imagePath:
                                                         "assets/images/quranlogo.png"),
+                                                SuperellipseButton(
+                                                    text: "نسخ احتياطي",
+                                                    onPressed: () {
+                                                      Navigator.push(
+                                                          context,
+                                                          CupertinoPageRoute(
+                                                              builder: (builder) =>
+                                                                  const BackupPage()));
+                                                    },
+                                                    imagePath:
+                                                        "assets/images/statistics.png"),
                                                 SuperellipseButton(
                                                     text: "downloaded".tr(),
                                                     onPressed: () async {

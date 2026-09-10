@@ -14,25 +14,37 @@ class KhatmaService {
     return null;
   }
 
-  static void createGoal({required DateTime startDate, required DateTime endDate, int startPage = 1}) {
+  static void createGoal({required DateTime startDate, required DateTime endDate, int? startPage}) {
+    // إذا لم يحدد startPage، ابدأ من lastRead الحالي أو 1 (حسب طلب المستخدم: من تاريخ التفعيل)
+    int effectiveStart = startPage ?? 1;
+    if (startPage == null) {
+      final lastRead = getValue("lastRead");
+      if (lastRead is int && lastRead >= 1 && lastRead <= 604) {
+        effectiveStart = lastRead;
+      } else if (lastRead is String) {
+        final parsed = int.tryParse(lastRead);
+        if (parsed != null && parsed >= 1 && parsed <= 604) effectiveStart = parsed;
+      }
+    }
     final days = endDate.difference(DateTime(startDate.year, startDate.month, startDate.day)).inDays + 1;
-    final remaining = totalPages - startPage + 1;
+    final remaining = totalPages - effectiveStart + 1;
     final daily = (remaining / days).ceil();
     final map = {
       'startDate': startDate.toIso8601String(),
       'endDate': endDate.toIso8601String(),
-      'startPage': startPage,
+      'startPage': effectiveStart,
       'totalPages': remaining,
       'dailyGoal': daily,
       'createdAt': DateTime.now().toIso8601String(),
     };
     updateValue("khatma_goal", map);
-    // reset progress tracking for new goal
+    updateValue("khatma_pages_read", <int>[]);
     updateValue("khatma_lastStreakDate", null);
   }
 
   static void deleteGoal() {
     updateValue("khatma_goal", null);
+    updateValue("khatma_pages_read", <int>[]);
   }
 
   static int getTodayRead() {
@@ -43,6 +55,13 @@ class KhatmaService {
   static int getProgressPages() {
     final goal = getActiveGoal();
     if (goal == null) return 0;
+    // أولوية للصفحات المسجلة فعلياً (أدق من lastRead)
+    final khatmaPages = getValue("khatma_pages_read");
+    if (khatmaPages is List && khatmaPages.isNotEmpty) {
+      final startPage = (goal['startPage'] as int?) ?? 1;
+      final set = khatmaPages.map((e) => int.tryParse(e.toString()) ?? -1).where((e) => e >= startPage).toSet();
+      return set.length;
+    }
     final startPage = (goal['startPage'] as int?) ?? 1;
     final lastRead = getValue("lastRead");
     int currentPage = 0;

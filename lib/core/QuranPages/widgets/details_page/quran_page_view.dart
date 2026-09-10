@@ -93,13 +93,33 @@ class _QuranPageViewState extends State<QuranPageView> {
   }
 
   void _recordPageRead(int pageNumber) {
-    if (_lastRecordedPage == pageNumber) return;
     final today = DateTime.now();
     final dateKey = DateFormat('yyyy-MM-dd').format(today);
-    final currentCount = getValue("$dateKey-quran_reading-count") ?? 0;
-    updateValue("$dateKey-quran_reading-count", (currentCount as num) + 1);
-    final totalCount = getValue("quran_reading-totalCount") ?? 0;
-    updateValue("quran_reading-totalCount", (totalCount as num) + 1);
+    // تخزين الصفحات المقروءة كـ Set يومي لمنع العد عند المرور السريع وتكرار نفس الصفحة
+    List<dynamic> existing = getValue("$dateKey-quran_reading-pages") ?? [];
+    Set<int> pagesSet = existing.map((e) => int.tryParse(e.toString()) ?? -1).where((e) => e > 0).toSet();
+    bool isNewForToday = !pagesSet.contains(pageNumber);
+    if (!isNewForToday && _lastRecordedPage == pageNumber) return;
+    if (isNewForToday) {
+      pagesSet.add(pageNumber);
+      updateValue("$dateKey-quran_reading-pages", pagesSet.toList());
+      updateValue("$dateKey-quran_reading-count", pagesSet.length);
+      final totalCount = getValue("quran_reading-totalCount") ?? 0;
+      updateValue("quran_reading-totalCount", (totalCount as num) + 1);
+      // تتبع الختمة
+      final goal = getValue("khatma_goal");
+      if (goal is Map) {
+        int startPage = (goal['startPage'] as int?) ?? 1;
+        if (pageNumber >= startPage) {
+          List<dynamic> khatmaPages = getValue("khatma_pages_read") ?? [];
+          Set<int> khatmaSet = khatmaPages.map((e) => int.tryParse(e.toString()) ?? -1).where((e) => e >= startPage).toSet();
+          if (!khatmaSet.contains(pageNumber)) {
+            khatmaSet.add(pageNumber);
+            updateValue("khatma_pages_read", khatmaSet.toList());
+          }
+        }
+      }
+    }
     _lastRecordedPage = pageNumber;
   }
 
@@ -224,7 +244,8 @@ class _QuranPageViewState extends State<QuranPageView> {
                           ? 22.5.sp
                           : 22.4.sp
                       : 22.9.sp,
-              fontWeight: FontWeight.normal,
+              fontWeight: level <= 0 ? FontWeight.normal : FontWeight.w600,
+              shadows: level <= 0 ? null : [Shadow(color: textColor.withOpacity(0.3), blurRadius: 0, offset: const Offset(0.5, 0.5))],
               backgroundColor: bgColor,
             ),
             children: const [],
@@ -260,7 +281,8 @@ class _QuranPageViewState extends State<QuranPageView> {
         color: primaryColors[colorIndex],
         fontSize: baseFontSize,
         fontFamily: baseFontFamily,
-        fontWeight: FontWeight.normal,
+        fontWeight: level <= 0 ? FontWeight.normal : FontWeight.w600,
+        shadows: level <= 0 ? null : [Shadow(color: primaryColors[colorIndex].withOpacity(0.25), blurRadius: 0, offset: const Offset(0.4, 0.4))],
       ),
       children: children,
     );
@@ -424,7 +446,7 @@ class _QuranPageViewState extends State<QuranPageView> {
         _evictFarPages(a);
         
         _readingTimer?.cancel();
-        _readingTimer = Timer(const Duration(seconds: 10), () {
+        _readingTimer = Timer(const Duration(seconds: 3), () {
           _recordPageRead(a);
         });
       },

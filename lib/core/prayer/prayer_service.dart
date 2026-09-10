@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:adhan/adhan.dart';
+import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
@@ -223,27 +224,52 @@ class PrayerService {
     final arabic = getArabicName(englishName);
     final city = getValue("prayer_city")?.toString() ?? "";
     final body = city.isNotEmpty ? "حان الآن وقت صلاة $arabic في $city" : "حان الآن وقت صلاة $arabic";
+    // استخدم صوت مختلف لكل صلاة (ملفات azan_fajr.. في res/raw)
+    final soundName = 'azan_${englishName.toLowerCase()}';
     try {
       await _plugin.zonedSchedule(
         id,
         'حان وقت $arabic',
         body,
         tz.TZDateTime.from(time, tz.local),
-        const NotificationDetails(
+        NotificationDetails(
           android: AndroidNotificationDetails(
-            'prayer_channel',
-            'Prayer Notifications',
-            channelDescription: 'Prayer time notifications',
+            'prayer_$englishName',
+            'Prayer $arabic',
+            channelDescription: 'Prayer $arabic notifications',
             importance: Importance.max,
             priority: Priority.high,
             playSound: true,
+            sound: RawResourceAndroidNotificationSound(soundName),
             category: AndroidNotificationCategory.alarm,
           ),
         ),
         androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
       );
     } catch (e) {
-      debugPrint("Schedule $englishName failed: $e");
+      // fallback بدون صوت مخصص
+      try {
+        await _plugin.zonedSchedule(
+          id,
+          'حان وقت $arabic',
+          body,
+          tz.TZDateTime.from(time, tz.local),
+          const NotificationDetails(
+            android: AndroidNotificationDetails(
+              'prayer_channel',
+              'Prayer Notifications',
+              channelDescription: 'Prayer time notifications',
+              importance: Importance.max,
+              priority: Priority.high,
+              playSound: true,
+              category: AndroidNotificationCategory.alarm,
+            ),
+          ),
+          androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+        );
+      } catch (_) {
+        debugPrint("Schedule $englishName failed: $e");
+      }
     }
   }
 
@@ -258,12 +284,46 @@ class PrayerService {
 
   static Future<void> testNextPrayer() async {
     final next = getNextPrayer();
-    if (next['name']!.isEmpty) return;
+    String title;
+    String body;
+    if (next['name']!.isEmpty) {
+      title = 'اختبار الأذان';
+      body = 'سيتم تشغيل صوت الأذان الآن (offline)';
+    } else {
+      title = 'اختبار - ${getArabicName(next['name']!)}';
+      body = 'الوقت: ${next['time']} - سيتم تشغيل الأذان';
+    }
+    // 1) إظهار إشعار فوراً
     await _plugin.show(
       9999,
-      'اختبار - ${getArabicName(next['name']!)}',
-      'الوقت: ${next['time']}',
-      const NotificationDetails(android: AndroidNotificationDetails('prayer_test', 'Test', importance: Importance.max, priority: Priority.high)),
+      title,
+      body,
+      const NotificationDetails(android: AndroidNotificationDetails('prayer_test', 'Test', importance: Importance.max, priority: Priority.high, playSound: true, sound: RawResourceAndroidNotificationSound('azan'))),
     );
+    // 2) تشغيل صوت الأذان فعلياً offline عبر AudioPlayer
+    try {
+      final player = AudioPlayer();
+      await player.play(AssetSource('audio/azan.mp3'));
+      // إيقاف بعد 20 ثانية (لمنع التشغيل الطويل في الاختبار)
+      Future.delayed(const Duration(seconds: 20), () {
+        player.stop();
+        player.dispose();
+      });
+    } catch (e) {
+      debugPrint("Azan audio play failed: $e");
+    }
+  }
+
+  static Future<void> playAzanNow() async {
+    try {
+      final player = AudioPlayer();
+      await player.play(AssetSource('audio/azan.mp3'));
+      Future.delayed(const Duration(seconds: 30), () {
+        player.stop();
+        player.dispose();
+      });
+    } catch (e) {
+      debugPrint("playAzanNow failed: $e");
+    }
   }
 }

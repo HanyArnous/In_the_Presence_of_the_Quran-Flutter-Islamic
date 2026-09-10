@@ -1,4 +1,6 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:intl/intl.dart';
 import 'package:nabd/GlobalHelpers/hive_helper.dart';
@@ -166,7 +168,6 @@ class _KhatmaPageState extends State<KhatmaPage> {
             final lastRead = getValue("lastRead");
             int page = 1;
             if (lastRead is int && lastRead >=1 && lastRead <=604) page = lastRead;
-            // تحميل البيانات المطلوبة للصفحة
             dynamic jData;
             dynamic qData;
             try {
@@ -177,8 +178,22 @@ class _KhatmaPageState extends State<KhatmaPage> {
               final cachedQ = getValue("quarters_json_cache");
               if (cachedQ != null) qData = cachedQ;
             } catch (_) {}
+            if (jData == null || (jData is List && jData.isEmpty)) {
+              try {
+                final str = await rootBundle.loadString('assets/json/surahs.json');
+                jData = json.decode(str);
+              } catch (_) {}
+            }
+            if (qData == null || (qData is List && qData.isEmpty)) {
+              try {
+                final str = await rootBundle.loadString('assets/json/quarters.json');
+                qData = json.decode(str);
+              } catch (_) {}
+            }
+            jData ??= [];
+            qData ??= [];
             if (!mounted) return;
-            Navigator.push(context, MaterialPageRoute(builder: (_) => QuranDetailsPage(pageNumber: page, jsonData: jData ?? [], quarterJsonData: qData ?? [], shouldHighlightText: false, highlightVerse: null, shouldHighlightSura: false)));
+            Navigator.push(context, MaterialPageRoute(builder: (_) => QuranDetailsPage(pageNumber: page, jsonData: jData, quarterJsonData: qData, shouldHighlightText: false, highlightVerse: null, shouldHighlightSura: false)));
           },
           icon: const Icon(Icons.auto_stories),
           label: const Text("متابعة القراءة", style: TextStyle(fontFamily: "cairo")),

@@ -33,6 +33,13 @@ class _PrayerSettingsPageState extends State<PrayerSettingsPage> {
     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("تم حفظ إعدادات الأذان", style: TextStyle(fontFamily: "cairo"))));
   }
 
+  String _formatPrayerTime(DateTime? dt) {
+    if (dt == null) return "غير متوفر";
+    final h = dt.hour.toString().padLeft(2, '0');
+    final m = dt.minute.toString().padLeft(2, '0');
+    return "$h:$m";
+  }
+
   @override
   Widget build(BuildContext context) {
     final coords = PrayerService.getTodayPrayerTimesMap();
@@ -44,8 +51,10 @@ class _PrayerSettingsPageState extends State<PrayerSettingsPage> {
         backgroundColor: const Color(0xff6B8E4E),
         foregroundColor: Colors.white,
       ),
-      body: ListView(
-        padding: EdgeInsets.all(16.w),
+      body: SafeArea(
+        bottom: true,
+        child: ListView(
+        padding: EdgeInsets.fromLTRB(16.w, 16.w, 16.w, 16.w + MediaQuery.of(context).padding.bottom + 16.h),
         children: [
           Card(
             child: ListTile(
@@ -69,7 +78,7 @@ class _PrayerSettingsPageState extends State<PrayerSettingsPage> {
                   const Text("الصلوات المفعلة", style: TextStyle(fontFamily: "cairo", fontWeight: FontWeight.bold)),
                   ...["Fajr","Dhuhr","Asr","Maghrib","Isha"].map((e) => SwitchListTile(
                     title: Text(PrayerService.getArabicName(e), style: const TextStyle(fontFamily: "cairo")),
-                    subtitle: Text(coords[e] != null ? PrayerService.getNextPrayer()['time'] ?? "" : "", style: const TextStyle(fontSize: 11)),
+                    subtitle: Text(_formatPrayerTime(coords[e]), style: const TextStyle(fontSize: 11, fontFamily: "roboto")),
                     value: enabled[e] ?? true,
                     onChanged: (v) { setState(() => enabled[e]=v); _save(); },
                   )),
@@ -141,7 +150,9 @@ class _PrayerSettingsPageState extends State<PrayerSettingsPage> {
             await PrayerService.cancelAllPrayers();
             if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("تم إلغاء جميع تنبيهات الأذان")));
           }, icon: const Icon(Icons.cancel), label: const Text("إلغاء الكل", style: TextStyle(fontFamily: "cairo"))),
+          SizedBox(height: 24.h),
         ],
+      ),
       ),
     );
   }

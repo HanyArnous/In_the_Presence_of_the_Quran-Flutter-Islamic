@@ -641,7 +641,7 @@ class QuranDetailsPageState extends State<QuranDetailsPage> {
                                           color: primaryColors[
                                               getValue("quranPageolorsIndex")]),
                                     ),
-                                    child: const Text("عريض (للعناوين فقط)",
+                                    child: const Text("عريض",
                                         style: TextStyle(fontFamily: "cairo", fontSize: 12)),
                                   ),
                                 ),

@@ -105,6 +105,7 @@ dependencies:
   adhan:
   timezone: ^0.10.1
   flutter_timezone: ^4.1.0
+  file_picker: ^8.1.0
   flutter_overlay_window: 
   workmanager:
   flutter_colorpicker: 
@@ -163,6 +164,7 @@ flutter:
     - assets/json/
     - assets/translations/
     - assets/click.mp3
+    - assets/audio/
 
   #   - images/a_dot_ham.jpeg
 

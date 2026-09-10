@@ -1,0 +1,51 @@
+import 'package:bloc/bloc.dart';
+import 'package:meta/meta.dart';
+import 'dart:convert';
+import 'dart:io';
+
+import 'package:dio/dio.dart' as dio;
+import 'package:nabd/core/hadith/data/books.dart';
+import 'package:path_provider/path_provider.dart' as path_provider;
+part 'hadith_event.dart';
+part 'hadith_state.dart';
+
+class HadithBloc extends Bloc<HadithEvent, HadithState> {
+  HadithBloc() : super(HadithInitial()) {
+    on<HadithEvent>((event, emit) async {
+      if (event is DownloadHadithBook) {
+        var appDir = await path_provider.getTemporaryDirectory();
+
+        // استخدام getTemporaryDirectory لا يتطلب أي إذن تخزين (Scoped Storage)
+        // تمت إزالة Permission.storage و manageExternalStorage لتجنب رفض Play Store
+
+        await dio.Dio().download(
+          "$baseHadithUrl/${event.filename}",
+          "${appDir.path}/${event.filename}",
+          options: dio.Options(
+              headers: {HttpHeaders.acceptEncodingHeader: "*"}), // disable gzip
+          onReceiveProgress: (received, total) {
+            if (total != -1) {
+              print("${(received / total * 100).toStringAsFixed(0)}%");
+              emit(HadithDownloading(
+                  "${(received / total * 100).toStringAsFixed(0)}%",
+                  event.filename));
+            } else {
+              emit(HadithInitial());
+            }
+          },
+        );
+      } else if (event is GetHadithBook) {
+        var book;
+        var appDir = await path_provider.getTemporaryDirectory();
+
+        if (File("${appDir.path}/${event.filename}").existsSync()) {
+          File file = File("${appDir.path}/${event.filename}");
+
+          String jsonData = await file.readAsString();
+          book = json.decode(jsonData);
+        }
+        emit(HadithFetched(book));
+      }
+    });
+  }
+}

@@ -1,0 +1,112 @@
+import 'package:nabd/models/reciter.dart';
+
+List<QuranPageReciter> reciters = [];
+
+void addReciters() {
+  reciters = [
+    QuranPageReciter(
+        identifier: "ar.alafasy",
+        language: "ar",
+        name: "مشاري العفاسي",
+        englishName: "Mishary Rashid Alafasy",
+        format: "audio",
+        type: "versebyverse",
+        direction: "rtl"),
+    QuranPageReciter(
+        identifier: "ar.abdulbasitmurattal",
+        language: "ar",
+        name: "عبد الباسط عبد الصمد المرتل",
+        englishName: "Abdul Basit Murattal",
+        format: "audio",
+        type: "versebyverse",
+        direction: "rtl"),
+    QuranPageReciter(
+        identifier: "ar.abdullahbasfar",
+        language: "ar",
+        name: "عبد الله بصفر",
+        englishName: "Abdullah Basfar",
+        format: "audio",
+        type: "versebyverse",
+        direction: "rtl"),
+    QuranPageReciter(
+        identifier: "ar.abdurrahmaansudais",
+        language: "ar",
+        name: "عبد الرحمن السديس",
+        englishName: "Abdurrahmaan As-Sudais",
+        format: "audio",
+        type: "versebyverse",
+        direction: "rtl"),
+    QuranPageReciter(
+        identifier: "ar.hanirifai",
+        language: "ar",
+        name: "هاني الرفاعي",
+        englishName: "Hani Rifai",
+        format: "audio",
+        type: "versebyverse",
+        direction: "rtl"),
+    QuranPageReciter(
+        identifier: "ar.husary",
+        language: "ar",
+        name: "محمود خليل الحصري",
+        englishName: "Mahmoud Khalil Al-Husary",
+        format: "audio",
+        type: "versebyverse",
+        direction: "rtl"),
+    QuranPageReciter(
+        identifier: "ar.hudhaify",
+        language: "ar",
+        name: "علي بن عبد الرحمن الحذيفي",
+        englishName: "Ali Al-Hudhaify",
+        format: "audio",
+        type: "versebyverse",
+        direction: "rtl"),
+    QuranPageReciter(
+        identifier: "ar.ibrahimakhbar",
+        language: "ar",
+        name: "إبراهيم الأخضر",
+        englishName: "Ibrahim Al-Akhdar",
+        format: "audio",
+        type: "versebyverse",
+        direction: "rtl"),
+    QuranPageReciter(
+        identifier: "ar.mahermuaiqly",
+        language: "ar",
+        name: "ماهر المعيقلي",
+        englishName: "Maher Al Muaiqly",
+        format: "audio",
+        type: "versebyverse",
+        direction: "rtl"),
+    QuranPageReciter(
+        identifier: "ar.minshawi",
+        language: "ar",
+        name: "محمد صديق المنشاوي",
+        englishName: "Mohamed Siddiq Al-Minshawi",
+        format: "audio",
+        type: "versebyverse",
+        direction: "rtl"),
+    QuranPageReciter(
+        identifier: "ar.muhammadayyoub",
+        language: "ar",
+        name: "محمد أيوب",
+        englishName: "Muhammad Ayyoub",
+        format: "audio",
+        type: "versebyverse",
+        direction: "rtl"),
+    QuranPageReciter(
+        identifier: "ar.muhammadjibreel",
+        language: "ar",
+        name: "محمد جبريل",
+        englishName: "Muhammad Jibreel",
+        format: "audio",
+        type: "versebyverse",
+        direction: "rtl"),
+    QuranPageReciter(
+        identifier: "ar.saoodshuraym",
+        language: "ar",
+        name: "سعود الشريم",
+        englishName: "Saood ash-Shuraym",
+        format: "audio",
+        type: "versebyverse",
+        direction: "rtl"),
+  ];
+}

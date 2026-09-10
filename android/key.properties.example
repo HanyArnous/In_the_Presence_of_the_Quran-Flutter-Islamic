@@ -1,0 +1,5 @@
+storePassword=CHANGE_ME_STRONG_PASSWORD
+keyPassword=CHANGE_ME_STRONG_PASSWORD
+keyAlias=quranpresence
+storeFile=app/quranpresence-release.jks
+# ضع كلمة السر الحقيقية في android/key.properties المحلي فقط (لا ترفعه إلى Git)

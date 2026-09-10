@@ -1,0 +1,75 @@
+# Miscellaneous
+*.class
+*.log
+*.pyc
+*.swp
+.DS_Store
+.atom/
+.buildlog/
+.history
+.svn/
+migrate_working_dir/
+
+# IntelliJ related
+*.iml
+*.ipr
+*.iws
+.idea/
+
+# The .vscode folder contains launch configuration and tasks you configure in
+# VS Code which you may wish to be included in version control, so this line
+# is commented out by default.
+#.vscode/
+
+# Flutter/Dart/Pub related
+**/doc/api/
+**/ios/Flutter/.last_build_id
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+/build/
+
+# Symbolication related
+app.*.symbols
+
+# Obfuscation related
+app.*.map.json
+
+# Android Studio will place build artifacts here
+/android/app/debug
+/android/app/profile
+/android/app/release
+/android/build
+/android/app/build
+/build
+**/build
+
+# Keystore & signing - NEVER commit
+*.jks
+*.keystore
+**/key.properties
+**/keystore.properties
+keys/
+android/app/quranpresence-release.jks
+android/key.properties
+In_the_Presence_of_the_Quran-release-key.jks
+
+# Local & secrets
+android/local.properties
+*.env
+.env
+
+# Logs & temp
+hs_err_*.log
+replay_*.log
+flutter_*.log
+*.log
+Untitled.png
+pubspec-Copy.yaml
+.fvm/
+cleanup_*.py
+periodic_alarm/
+quran-1.2.2/example/

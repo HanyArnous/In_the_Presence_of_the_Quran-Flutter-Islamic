@@ -72,6 +72,7 @@ dependencies:
   wakelock_plus: 
   flutter_screenutil:
   hive:
+  hive_flutter:
   path_provider: ^2.1.5
   flutter_displaymode: ^0.6.0
   share_plus: ^11.0.0

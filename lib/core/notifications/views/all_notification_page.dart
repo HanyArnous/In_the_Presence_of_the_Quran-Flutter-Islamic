@@ -810,36 +810,19 @@ class _NotificationsPageState extends State<NotificationsPage> {
                                 value: getValue("shouldShowZikrNotification"),
                                 // changes the state of the switch
                                 onChanged: (value) async {
-                                  if ((await FlutterOverlayWindow
-                                          .isPermissionGranted()) ==
-                                      false) {
-                                    await FlutterOverlayWindow
-                                        .requestPermission();
-                                  }
-
-                                  if (await FlutterOverlayWindow
-                                      .isPermissionGranted()) {
-                                    if (value == true) {
-                                      if (await Permission.notification
-                                          .request()
-                                          .isGranted) {
-                                        updateValue(
-                                            "shouldShowZikrNotification",
-                                            value);
-                                        Workmanager().registerPeriodicTask(
-                                            "zikrNotification",
-                                            "zikrNotification",
-                                            frequency: Duration(
-                                                minutes: periods[getValue(
-                                                        "timesForShowingZikrNotifications")]
-                                                    ["index"]));
-                                      }
-                                    } else {
-                                      updateValue(
-                                          "shouldShowZikrNotification", value);
-                                      Workmanager().cancelByUniqueName(
-                                          "zikrNotification");
+                                  // تم التغيير إلى heads-up بدل overlay
+                                  if (value == true) {
+                                    if (await Permission.notification.request().isGranted) {
+                                      updateValue("shouldShowZikrNotification", value);
+                                      Workmanager().registerPeriodicTask(
+                                          "zikrNotification",
+                                          "zikrNotification",
+                                          frequency: Duration(
+                                              minutes: periods[getValue("timesForShowingZikrNotifications")]["index"]));
                                     }
+                                  } else {
+                                    updateValue("shouldShowZikrNotification", value);
+                                    Workmanager().cancelByUniqueName("zikrNotification");
                                   }
                                   setState(() {});
                                 }),
@@ -854,15 +837,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
                             // )),
                             TextButton(
                                 onPressed: () async {
-                                  if ((await FlutterOverlayWindow
-                                          .isPermissionGranted()) ==
-                                      false) {
-                                    await FlutterOverlayWindow
-                                        .requestPermission();
-                                  }
-
-                                  if (await FlutterOverlayWindow
-                                      .isPermissionGranted()) {
+                                  if (await Permission.notification.request().isGranted) {
                                     Workmanager().registerOneOffTask(
                                         "zikrNotificationTest",
                                         "zikrNotificationTest");

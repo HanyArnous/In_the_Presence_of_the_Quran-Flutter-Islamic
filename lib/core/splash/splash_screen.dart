@@ -220,7 +220,7 @@ class _SplashScreenState extends State<SplashScreen> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
-                  "في رحاب القرآن\nرفيقك اليومي للتلاوة والتدبر",
+                  "في رحاب الرحمن\nرفيقك اليومي للتلاوة والتدبر",
                   textAlign: TextAlign.center,
                   style: TextStyle(
                       color: Colors.black,

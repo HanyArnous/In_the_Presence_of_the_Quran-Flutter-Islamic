@@ -604,8 +604,15 @@ class _QuranPageViewState extends State<QuranPageView> {
                                               _transformController,
                                           minScale: 1.0,
                                           maxScale: 4.0,
+                                          boundaryMargin: const EdgeInsets.all(double.infinity),
+                                          clipBehavior: Clip.none,
                                           panEnabled: isZoomed,
                                           scaleEnabled: true,
+                                          onInteractionEnd: (details) {
+                                            if (_transformController.value.getMaxScaleOnAxis() <= 1.01) {
+                                              setState(() => isZoomed = false);
+                                            }
+                                          },
                                           child: RichText(
                                             key: richTextKeys[index - 1],
                                             textDirection: m.TextDirection.rtl,
@@ -654,8 +661,15 @@ class _QuranPageViewState extends State<QuranPageView> {
                                         _transformController,
                                     minScale: 1.0,
                                     maxScale: 4.0,
+                                    boundaryMargin: const EdgeInsets.all(double.infinity),
+                                    clipBehavior: Clip.none,
                                     panEnabled: isZoomed,
                                     scaleEnabled: true,
+                                    onInteractionEnd: (details) {
+                                      if (_transformController.value.getMaxScaleOnAxis() <= 1.01) {
+                                        setState(() => isZoomed = false);
+                                      }
+                                    },
                                     child: RichText(
                                       key: richTextKeys[index - 1],
                                       textDirection: m.TextDirection.rtl,

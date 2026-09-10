@@ -224,30 +224,27 @@ class PrayerService {
     final arabic = getArabicName(englishName);
     final city = getValue("prayer_city")?.toString() ?? "";
     final body = city.isNotEmpty ? "حان الآن وقت صلاة $arabic في $city" : "حان الآن وقت صلاة $arabic";
-    // استخدم صوت مختلف لكل صلاة (ملفات azan_fajr.. في res/raw)
-    final soundName = 'azan_${englishName.toLowerCase()}';
     try {
       await _plugin.zonedSchedule(
         id,
         'حان وقت $arabic',
         body,
         tz.TZDateTime.from(time, tz.local),
-        NotificationDetails(
+        const NotificationDetails(
           android: AndroidNotificationDetails(
-            'prayer_$englishName',
-            'Prayer $arabic',
-            channelDescription: 'Prayer $arabic notifications',
+            'prayer_channel',
+            'Prayer Notifications',
+            channelDescription: 'Prayer time notifications',
             importance: Importance.max,
             priority: Priority.high,
             playSound: true,
-            sound: RawResourceAndroidNotificationSound(soundName),
+            sound: RawResourceAndroidNotificationSound('azan'),
             category: AndroidNotificationCategory.alarm,
           ),
         ),
         androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
       );
     } catch (e) {
-      // fallback بدون صوت مخصص
       try {
         await _plugin.zonedSchedule(
           id,

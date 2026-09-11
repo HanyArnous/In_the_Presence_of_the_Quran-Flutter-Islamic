@@ -99,4 +99,22 @@ class AzanNativeBridge {
       return false;
     }
   }
+
+  /// هل يملك التطبيق إذن المنبه الدقيق؟ (مطلوب لعمل الأذان والتطبيق مغلق)
+  static Future<bool> canScheduleExact() async {
+    if (!isSupported) return true;
+    try {
+      return await _channel.invokeMethod<bool>('canScheduleExact') ?? true;
+    } catch (_) {
+      return true;
+    }
+  }
+
+  /// فتح شاشة إعدادات إذن المنبه الدقيق ليمنحه المستخدم يدوياً.
+  static Future<void> openExactAlarmSettings() async {
+    if (!isSupported) return;
+    try {
+      await _channel.invokeMethod('openExactAlarmSettings');
+    } catch (_) {}
+  }
 }

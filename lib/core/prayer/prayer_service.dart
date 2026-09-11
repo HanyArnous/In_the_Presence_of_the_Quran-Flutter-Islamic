@@ -140,6 +140,23 @@ class PrayerService {
     if (_coldStartHandled) return;
     _coldStartHandled = true;
     try {
+      // 0) إعادة جدولة بعد reboot أولاً دائماً (قبل أي return مبكر)
+      // لأن منبهات AlarmManager تُمسح بالإغلاق الكامل/إعادة التشغيل
+      // وBootReceiver يكتفي بوضع علامة needs_reschedule.
+      try {
+        if (await AzanNativeBridge.needsReschedule()) {
+          await scheduleAllPrayers();
+        } else {
+          // أمان: إعادة جدولة يومية حتى لو لم يُضبط العلم
+          // (Force-Stop لا يرسل BOOT، والجدولة 7 أيام قد تنتهي)
+          final last = getValue("prayer_last_schedule") as int? ?? 0;
+          final dayAgo =
+              DateTime.now().millisecondsSinceEpoch - 24 * 3600 * 1000;
+          if (last < dayAgo) {
+            await scheduleAllPrayers();
+          }
+        }
+      } catch (_) {}
       // 1) فتح عبر إشعار
       try {
         final launch =
@@ -168,12 +185,6 @@ class PrayerService {
         openAzanAlert(p['en'] ?? '', p['ar'] ?? 'الصلاة');
         return;
       }
-      // 4) إعادة جدولة بعد reboot
-      try {
-        if (await AzanNativeBridge.needsReschedule()) {
-          await scheduleAllPrayers();
-        }
-      } catch (_) {}
     } catch (_) {}
   }
 
@@ -485,6 +496,11 @@ class PrayerService {
     } catch (e) {
       debugPrint('Native azan schedule failed: $e');
     }
+    // طابع آخر جدولة ناجحة لأمان إعادة الجدولة اليومية عند الفتح
+    try {
+      updateValue(
+          "prayer_last_schedule", DateTime.now().millisecondsSinceEpoch);
+    } catch (_) {}
   }
 
   static int _prayerId(String name, DateTime date) {
@@ -493,42 +509,16 @@ class PrayerService {
     return base * 10000 + date.month * 100 + date.day;
   }
 
+  /// جدولة مفردة للأذان عبر Native فقط (إشعار واحد).
+  /// أُزيلت جدولة FLN هنا عمداً: كانت تعرض إشعاراً ثانياً مع إشعار
+  /// الخدمة الأمامية (1001) في نفس اللحظة. الضغط على إشعار الخدمة
+  /// يفتح التطبيق ويعرض شاشة الأذان عبر pending-azan.
   static Future<void> _scheduleSingle(int id, String englishName, DateTime time) async {
-    final arabic = getArabicName(englishName);
-    final city = getValue("prayer_city")?.toString() ?? "";
-    final body = city.isNotEmpty ? "حان الآن وقت صلاة $arabic في $city" : "حان الآن وقت صلاة $arabic";
-    final payload = 'azan|$englishName|$arabic';
-    final details = const NotificationDetails(
-      android: AndroidNotificationDetails(
-        kPrayerChannelId,
-        'Prayer Notifications',
-        channelDescription: 'Prayer time notifications - full azan',
-        importance: Importance.max,
-        priority: Priority.high,
-        // بلا صوت إشعار عمداً: صوت الأذان يأتي من الخدمة الأمامية فقط
-        // (تشغيل الملف هنا مع الخدمة معاً كان يسبب صدى وخفض الوضوح).
-        playSound: false,
-        category: AndroidNotificationCategory.alarm,
-        visibility: NotificationVisibility.public,
-        // شاشة ملء + بقاء 5 دقائق حتى يكتمل الأذان
-        fullScreenIntent: true,
-        timeoutAfter: azanTimeoutMillis,
-        actions: [AndroidNotificationAction('stop_azan', 'إيقاف', cancelNotification: true, showsUserInterface: true)],
-      ),
-    );
+    // لا حاجة لأي إجراء هنا — nativeItems تُجمع في scheduleAllPrayers.
+    // أُبقيت الدالة للتوافق، مع إلغاء أي FLN قديم بنفس المعرف (من إصدارات سابقة).
     try {
-      await _plugin.zonedSchedule(
-        id,
-        'حان وقت $arabic',
-        body,
-        tz.TZDateTime.from(time, tz.local),
-        details,
-        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-        payload: payload,
-      );
-    } catch (e) {
-      debugPrint("Schedule $englishName failed: $e");
-    }
+      await _plugin.cancel(id);
+    } catch (_) {}
   }
 
   static Future<void> cancelAllPrayers() async {
@@ -547,25 +537,16 @@ class PrayerService {
 
   static Future<void> testNextPrayer() async {
     final next = getNextPrayer();
-    String title;
-    String body;
     String en = next['name'] ?? '';
     if (en.isEmpty) {
-      title = 'اختبار الأذان';
-      body = 'سيتم تشغيل صوت الأذان الآن كاملاً';
       en = 'Fajr';
-    } else {
-      title = 'اختبار - ${getArabicName(en)}';
-      body = 'الوقت: ${next['time']} - سيتم تشغيل الأذان كاملاً';
     }
     final arabic = getArabicName(en);
-    await _plugin.show(
-      9999,
-      title,
-      body,
-      const NotificationDetails(android: AndroidNotificationDetails(kPrayerTestChannelId, 'Test', importance: Importance.max, priority: Priority.high, playSound: false, actions: [AndroidNotificationAction('stop_azan', 'إيقاف', cancelNotification: true)])),
-      payload: 'azan|$en|$arabic',
-    );
+    // إشعار واحد فقط: الخدمة الأمامية native تعرض إشعارها الخاص (1001).
+    // عرض FLN هنا معها كان ينتج إشعارين متراكبين — أُزيل عمداً.
+    try {
+      await _plugin.cancel(9999);
+    } catch (_) {}
     // تشغيل كامل: native أولاً ثم بديل Dart بدون مؤقت إيقاف
     final nativeOk = await AzanNativeBridge.playNow(prayerName: arabic, prayerEn: en);
     if (!nativeOk) {

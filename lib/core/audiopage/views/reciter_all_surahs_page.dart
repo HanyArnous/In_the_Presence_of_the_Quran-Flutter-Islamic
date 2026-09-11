@@ -17,6 +17,7 @@ import 'package:nabd/blocs/bloc/quran_page_player_bloc.dart';
 import 'package:nabd/core/home.dart';
 
 import 'package:quran/quran.dart' as quran;
+import 'package:nabd/core/QuranPages/helpers/surah_names_tashkeel.dart';
 
 class RecitersSurahListPage extends StatefulWidget {
   Reciter reciter;
@@ -119,11 +120,11 @@ class _RecitersSurahListPageState extends State<RecitersSurahListPage> {
     filteredSurahs = [];
     setState(() {
       surahs = widget.mushaf.surahList.split(',').map((e) {
+        final num = int.tryParse(e.toString()) ?? 0;
+        // العرض بالتشكيل الكامل من الخريطة المحلية (الـ API بدون تشكيل)
         return {
           "surahNumber": e,
-          "suraName": widget.jsonData
-              .where((element) => element["id"].toString() == e.toString())
-              .first["name"]
+          "suraName": getSurahNameTashkeel(num),
         };
       }).toList();
     });
@@ -185,6 +186,18 @@ class _RecitersSurahListPageState extends State<RecitersSurahListPage> {
     setState(() {});
   }
 
+  /// حل اسم السورة بالتشكيل الكامل للعرض.
+  String _resolveSurahName(dynamic surahNumber, dynamic fallbackEnglish) {
+    final num = int.tryParse(surahNumber.toString()) ?? 0;
+    if (num >= 1 && num <= 114) return getSurahNameTashkeel(num);
+    try {
+      if (context.locale.languageCode != "ar") {
+        return fallbackEnglish.toString();
+      }
+    } catch (_) {}
+    return fallbackEnglish.toString();
+  }
+
   addFavorites() {
     final raw = getValue("favoriteSurahList");
     if (raw == null || raw.toString().isEmpty) {
@@ -219,9 +232,10 @@ class _RecitersSurahListPageState extends State<RecitersSurahListPage> {
   filterSurahs(value) {
     addSuraNames();
     setState(() {
+      // مطابقة تتجاهل التشكيل من الطرفين: بحث سادة يطابق عرضاً مشكّلاً والعكس
       filteredSurahs = surahs
-          .where(
-              (element) => quran.normalise(element["suraName"]).contains(value))
+          .where((element) =>
+              matchesSurahSearch(element["suraName"].toString(), value.toString()))
           .toList();
     });
     _scrollSurahsToTop();
@@ -796,7 +810,8 @@ class _RecitersSurahListPageState extends State<RecitersSurahListPage> {
                       title: Row(
                         children: [
                           Text(
-                            "${context.locale.languageCode == "ar" ? widget.jsonData[(int.parse(selectedMode == "all" ? surah["surahNumber"] : surah["surahNumber"])) - 1]["name"] : surah["suraName"]}",
+                            _resolveSurahName(
+                                surah["surahNumber"], surah["suraName"]),
                             style: TextStyle(
                                 fontFamily: context.locale.languageCode == "ar"
                                     ? "qaloon"

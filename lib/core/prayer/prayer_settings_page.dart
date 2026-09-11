@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:nabd/GlobalHelpers/hive_helper.dart';
 import 'package:nabd/core/prayer/azan_alert_page.dart';
+import 'package:nabd/core/prayer/azan_native_bridge.dart';
 import 'package:nabd/core/prayer/prayer_service.dart';
 
 class PrayerSettingsPage extends StatefulWidget {
@@ -15,6 +16,7 @@ class _PrayerSettingsPageState extends State<PrayerSettingsPage> {
   late Map<String, bool> enabled;
   String method = "egyptian";
   String madhab = "shafi";
+  bool? _exactGranted;
 
   @override
   void initState() {
@@ -22,6 +24,14 @@ class _PrayerSettingsPageState extends State<PrayerSettingsPage> {
     enabled = Map<String, bool>.from(getValue("prayer_enabled") ?? {"Fajr":true,"Dhuhr":true,"Asr":true,"Maghrib":true,"Isha":true});
     method = getValue("prayer_method") ?? "egyptian";
     madhab = getValue("prayer_madhab") ?? "shafi";
+    _checkExact();
+  }
+
+  Future<void> _checkExact() async {
+    try {
+      final v = await AzanNativeBridge.canScheduleExact();
+      if (mounted) setState(() => _exactGranted = v);
+    } catch (_) {}
   }
 
   void _save() {
@@ -83,6 +93,27 @@ class _PrayerSettingsPageState extends State<PrayerSettingsPage> {
             ),
           ),
           SizedBox(height: 12.h),
+          // تنبيه إذن المنبه الدقيق: بدونه يعمل الأذان بتأخير والتطبيق مغلق
+          if (_exactGranted == false)
+            Card(
+              color: Colors.orange.shade50,
+              child: ListTile(
+                leading: const Icon(Icons.alarm_off, color: Colors.orange),
+                title: const Text("المنبه الدقيق غير مفعّل",
+                    style: TextStyle(fontFamily: "cairo", fontWeight: FontWeight.bold)),
+                subtitle: const Text(
+                    "فعّله من الإعدادات ليعمل الأذان بدقة والتطبيق مغلق",
+                    style: TextStyle(fontFamily: "cairo")),
+                trailing: TextButton(
+                    onPressed: () async {
+                      await AzanNativeBridge.openExactAlarmSettings();
+                      await Future.delayed(const Duration(seconds: 1));
+                      _checkExact();
+                    },
+                    child: const Text("فتح الإعدادات")),
+              ),
+            ),
+          if (_exactGranted == false) SizedBox(height: 12.h),
           Card(
             child: Padding(
               padding: EdgeInsets.all(12.w),

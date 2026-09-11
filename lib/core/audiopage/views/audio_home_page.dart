@@ -137,7 +137,25 @@ class _RecitersPageState extends State<RecitersPage> {
             .compareTo(b.name.toString().toLowerCase()));
         
         rewayat = data2.map((reciter) => Moshaf.fromJson(reciter)).toList();
-        suwar = data3;
+        // تنقية كاش أسماء السور: إزالة الألف الخنجرية U+0670 لتوافق خط qaloon
+        // (42 الشورى، 55 الرحمن، 87 الأعلى، 93 الضحى كانت تظهر بمسافة/حرف مخفي)
+        suwar = (data3).map((e) {
+          if (e is Map) {
+            final id = e["id"].toString();
+            const fixedNames = {
+              "42": "الشُّورَى",
+              "55": "الرَّحْمَن",
+              "87": "الْأَعْلَى",
+              "93": "الضُّحَى",
+            };
+            if (fixedNames.containsKey(id)) {
+              final fixed = Map<String, dynamic>.from(e);
+              fixed["name"] = fixedNames[id];
+              return fixed;
+            }
+          }
+          return e;
+        }).toList();
         
         // تطبيق الفلتر المحفوظ تلقائياً بعد تحميل جميع البيانات
         _applyStoredFilter();
@@ -182,13 +200,17 @@ class _RecitersPageState extends State<RecitersPage> {
   }
 
   // دالة موحدة للفلترة (توحيد المنطق)
+  // ملاحظة API: العلاقة معكوسة — reciter.moshaf.moshaf_type == riwayat.id
+  // (مثال: قراء المعلم يحملون moshaf_type=213 ويقابلهم riwayat id=213)
+  // لذلك نطابق بنوع مصحف القارئ مع id المصحف المختار، لا بـ instance id.
   void _applyFilterByMoshafType(String moshafType, String moshafId) {
     setState(() {
       selectedMode = moshafType;
-      
-      // تصفية القراء بناءً على id المصحف المختار
+      selectedMoshafId = moshafId;
+
+      // تصفية القراء حسب القراءات المتوفرة لهذا المصحف (لا اسم القارئ)
       filteredReciters = reciters.where((reciter) {
-        return reciter.moshaf.any((m) => m.id.toString() == moshafId);
+        return reciter.moshaf.any((m) => m.moshafType.toString() == moshafId);
       }).toList();
       
       // ترتيب القائمة أبجدياً (ضروري جداً لـ AzListView)
@@ -196,7 +218,9 @@ class _RecitersPageState extends State<RecitersPage> {
           .compareTo(b.name.toString().toLowerCase()));
       
       // تحديث المفتاح في Hive لضمان ظهور النوع في شاشة الإحصائيات
+      // نخزن النوع + id المصحف معاً حتى نسترجع نفس المصحف لا أول مصحف من نفس النوع
       updateValue("audioRecitersMode", selectedMode);
+      updateValue("audioRecitersModeId", selectedMoshafId);
     });
     
     // نقل القائمة للأعلى لرؤية النتائج الجديدة
@@ -208,22 +232,43 @@ class _RecitersPageState extends State<RecitersPage> {
   // تطبيق الفلتر المحفوظ تلقائياً عند التحميل
   void _applyStoredFilter() {
     final storedMode = getValue("audioRecitersMode") ?? "all";
-    
+    final storedId = getValue("audioRecitersModeId")?.toString();
+
     if (storedMode == "all") {
       filteredReciters = List.from(reciters); // عرض الكل
       selectedMode = "all";
+      selectedMoshafId = "";
     } else if (storedMode == "favorite") { // 👈 معالجة حالة المفضلة عند الفتح
       filteredReciters = List.from(favoriteRecitersList);
       selectedMode = "favorite";
+      selectedMoshafId = "";
+    } else if (storedMode == "search") {
+      // حالة البحث لحظية ولا تُستعاد — نرجع للكل بدل اختيار خاطئ
+      filteredReciters = List.from(reciters);
+      selectedMode = "all";
+      selectedMoshafId = "";
+      updateValue("audioRecitersMode", "all");
     } else {
       // معالجة أنواع المصاحف الأخرى (مرتل، مجود...)
       if (rewayat.isNotEmpty) {
-        final matchingMoshaf = rewayat.firstWhere(
+        // أولوية الاسترجاع بـ id المصحف المحفوظ، ثم النوع كاحتياط
+        Moshaf? matchingMoshaf;
+        if (storedId != null && storedId.isNotEmpty) {
+          try {
+            matchingMoshaf = rewayat.firstWhere(
+              (m) => m.id.toString() == storedId,
+            );
+          } catch (_) {
+            matchingMoshaf = null;
+          }
+        }
+        matchingMoshaf ??= rewayat.firstWhere(
           (moshaf) => moshaf.moshafType.toString() == storedMode,
           orElse: () => rewayat.first,
         );
-        
-        _applyFilterByMoshafType(matchingMoshaf.moshafType.toString(), matchingMoshaf.id.toString());
+
+        _applyFilterByMoshafType(
+            matchingMoshaf.moshafType.toString(), matchingMoshaf.id.toString());
       } else {
         // إذا كانت rewayat فارغة، اعرض كل القراء كحالة افتراضية
         filteredReciters = List.from(reciters);
@@ -254,8 +299,9 @@ class _RecitersPageState extends State<RecitersPage> {
               .toLowerCase()
               .compareTo(b.name.toString().toLowerCase()));
         // حفظ حالة البحث
+        // البحث لحظي فقط ولا يُخزن كفلتر دائم حتى لا يسترجع بشكل خاطئ
         selectedMode = "search";
-        updateValue("audioRecitersMode", "search");
+        selectedMoshafId = "";
       }
     });
 
@@ -266,7 +312,8 @@ class _RecitersPageState extends State<RecitersPage> {
   getRewayaReciters(String id) {
     filteredReciters = [];
     for (var element in reciters) {
-      if (element.moshaf.any((element) => element.id.toString() == id)) {
+      // مطابقة بنوع المصحف مع id المصحف المختار (العلاقة المعكوسة في API)
+      if (element.moshaf.any((m) => m.moshafType.toString() == id)) {
         filteredReciters.add(element);
       }
     }
@@ -274,6 +321,14 @@ class _RecitersPageState extends State<RecitersPage> {
         .toString()
         .toLowerCase()
         .compareTo(b.name.toString().toLowerCase()));
+    // مزامنة الفلتر المختار مع الحالة المخزنة
+    try {
+      final m = rewayat.firstWhere((e) => e.id.toString() == id);
+      selectedMode = m.moshafType.toString();
+      selectedMoshafId = m.id.toString();
+      updateValue("audioRecitersMode", selectedMode);
+      updateValue("audioRecitersModeId", selectedMoshafId);
+    } catch (_) {}
     setState(() {});
   }
 
@@ -288,6 +343,8 @@ class _RecitersPageState extends State<RecitersPage> {
   TextEditingController textEditingController = TextEditingController();
   var searchQuery = "";
   var selectedMode = (getValue("audioRecitersMode") ?? "all").toString();
+  var selectedMoshafId =
+      (getValue("audioRecitersModeId") ?? "").toString();
   @override
   Widget build(BuildContext context) {
     final screenSize = MediaQuery.of(context).size;
@@ -590,9 +647,11 @@ class _RecitersPageState extends State<RecitersPage> {
                                                                 Image(
                                                                     height:
                                                                         25.h,
-                                                                    color: selectedMode ==
-                                                                            e
-                                                                                .moshafType
+                                                                    color: (selectedMoshafId.isNotEmpty
+                                                                            ? selectedMoshafId ==
+                                                                                e.id.toString()
+                                                                            : selectedMode ==
+                                                                                e.moshafType)
                                                                         ? null
                                                                         : Colors
                                                                             .grey,
@@ -609,12 +668,18 @@ class _RecitersPageState extends State<RecitersPage> {
                                                                             .end,
                                                                     children: [
                                                                       Icon(
-                                                                        selectedMode ==
-                                                                                e.moshafType.toString()
+                                                                        (selectedMoshafId.isNotEmpty
+                                                                                ? selectedMoshafId ==
+                                                                                    e.id.toString()
+                                                                                : selectedMode ==
+                                                                                    e.moshafType.toString())
                                                                             ? FontAwesome.dot_circled
                                                                             : FontAwesome.circle_empty,
-                                                                        color: selectedMode ==
-                                                                                e.moshafType.toString()
+                                                                        color: (selectedMoshafId.isNotEmpty
+                                                                                ? selectedMoshafId ==
+                                                                                    e.id.toString()
+                                                                                : selectedMode ==
+                                                                                    e.moshafType.toString())
                                                                             ? getValue("darkMode")
                                                                                 ? quranPagesColorDark
                                                                                 : quranPagesColorLight
@@ -657,7 +722,25 @@ class _RecitersPageState extends State<RecitersPage> {
           ? const Center(
               child: CircularProgressIndicator(color: darkPrimaryColor),
             )
-          : AnimationLimiter(
+          : (selectedMode == "favorite"
+                  ? favoriteRecitersList.isEmpty
+                  : filteredReciters.isEmpty)
+              ? Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(24.w),
+                    child: Text(
+                      "لا يوجد قراء لهذا المصحف حالياً",
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                          fontFamily: "cairo",
+                          fontSize: 16.sp,
+                          color: getValue("darkMode")
+                              ? Colors.white70
+                              : Colors.black54),
+                    ),
+                  ),
+                )
+              : AnimationLimiter(
               child: AzListView(
                 physics: const BouncingScrollPhysics(),
                 indexBarData: getLettersForLocale(context.locale.languageCode)!,

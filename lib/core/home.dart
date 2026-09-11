@@ -1679,9 +1679,17 @@ class _HomeState extends State<Home>
                                                                           showModalBottomSheet(
                                                                               backgroundColor: Colors.transparent,
                                                                               elevation: 0,
+                                                                              useSafeArea: true,
+                                                                              isScrollControlled: true,
+                                                                              showDragHandle: true,
                                                                               context: context,
-                                                                              builder: (ctx) => Container(
+                                                                              builder: (ctx) => SafeArea(
+                                                                                    top: false,
+                                                                                    child: Container(
                                                                                     decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.only(topLeft: Radius.circular(12), topRight: Radius.circular(12))),
+                                                                                    padding: EdgeInsets.only(
+                                                                                      bottom: MediaQuery.of(ctx).viewPadding.bottom + 12,
+                                                                                    ),
                                                                                     child: Column(
                                                                                       mainAxisSize: MainAxisSize.min,
                                                                                       children: [
@@ -1728,7 +1736,7 @@ class _HomeState extends State<Home>
                                                                                         )
                                                                                       ],
                                                                                     ),
-                                                                                  ));
+                                                                                  )));
                                                                         },
                                                                         icon: Icon(Iconsax.share, color: Colors.white, size: 18.sp)))
                                                               ],

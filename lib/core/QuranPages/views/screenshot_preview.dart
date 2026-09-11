@@ -850,56 +850,60 @@ class _ScreenShotPreviewPageState extends State<ScreenShotPreviewPage> {
       ),
       backgroundColor: Colors.white,
       bottomNavigationBar: SafeArea(
+        top: false,
         bottom: true,
         child: Container(
           decoration: BoxDecoration(
-            color: getValue("darkMode")
-                ? darkModeSecondaryColor
-                : Colors.transparent,
+            color:
+                getValue("darkMode") ? darkModeSecondaryColor : Colors.white,
           ),
-          child: Padding(
-            padding: const EdgeInsets.only(left: 0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.only(left: 0),
+          padding: EdgeInsets.only(
+            left: 16,
+            right: 16,
+            top: 8,
+            bottom: MediaQuery.of(context).viewPadding.bottom + 8,
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 6),
                   child: EasyContainer(
-                      height: 50,
-                      width: MediaQuery.of(context).size.width * .3,
-                      onTap: () async {
-                        await screenshotController
-                            .capture()
-                            .then((capturedImage) => shareImage(capturedImage!));
-                      },
-                      color: orangeColor,
-                      child: Text(
-                        "shareexternal".tr(),
-                        style: const TextStyle(color: Colors.white),
-                      )),
+                    height: 50,
+                    onTap: () async {
+                      final img = await screenshotController.capture();
+                      if (img != null) shareImage(img);
+                    },
+                    color: orangeColor,
+                    child: Text(
+                      "shareexternal".tr(),
+                      style: const TextStyle(color: Colors.white),
+                    ),
+                  ),
                 ),
-                Padding(
-                  padding: const EdgeInsets.only(left: 0),
+              ),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 6),
                   child: EasyContainer(
-                      height: 50,
-                      width: MediaQuery.of(context).size.width * .3,
-                      onTap: () async {
-                        await screenshotController.capture().then(
-                            (capturedImage) =>
-                                saveImageToGallery(capturedImage!));
-                      },
-                      color: orangeColor,
-                      child: Text(
-                        "savetogallery".tr(),
-                        style: TextStyle(
-                            fontSize: context.locale.languageCode == "ar"
-                                ? 12.sp
-                                : 15.sp,
-                            color: Colors.white),
-                      )),
+                    height: 50,
+                    onTap: () async {
+                      final img = await screenshotController.capture();
+                      if (img != null) await saveImageToGallery(img);
+                    },
+                    color: orangeColor,
+                    child: Text(
+                      "savetogallery".tr(),
+                      style: TextStyle(
+                        fontSize:
+                            context.locale.languageCode == "ar" ? 12.sp : 15.sp,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),

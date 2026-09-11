@@ -75,17 +75,20 @@ class _ShareAyahDialogState extends State<ShareAyahDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final bottomPad = MediaQuery.of(context).viewPadding.bottom;
     return SafeArea(
-      bottom: true,
+      top: false,
+      bottom: false,
       child: Dialog(
         insetPadding: EdgeInsets.only(
           left: 16,
           right: 16,
-          bottom: MediaQuery.of(context).padding.bottom + 16,
+          bottom: 16,
           top: 16,
         ),
         backgroundColor: backgroundColors[getValue("quranPageolorsIndex")],
-        child: Column(
+        child: SingleChildScrollView(
+          child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             const SizedBox(height: 20),
@@ -278,8 +281,9 @@ class _ShareAyahDialogState extends State<ShareAyahDialog> {
               _buildShareTextButton(context),
             if (getValue("selectedShareTypeIndex") == 0)
               _buildPreviewButton(context),
-            SizedBox(height: MediaQuery.of(context).padding.bottom + 20),
+            SizedBox(height: bottomPad + 16),
           ],
+        ),
         ),
       ),
     );

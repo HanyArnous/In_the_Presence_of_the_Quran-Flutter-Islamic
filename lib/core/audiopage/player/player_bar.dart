@@ -3,8 +3,11 @@ import 'dart:io';
 
 import 'package:animate_do/animate_do.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart' as m;
 import 'package:flutter/material.dart';
+import 'package:image_gallery_saver_plus/image_gallery_saver_plus.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:fluttericon/linearicons_free_icons.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:just_audio_background/just_audio_background.dart';
@@ -62,6 +65,43 @@ class _PlayerBarState extends State<PlayerBar> with AutomaticKeepAliveClientMixi
   // مسح وقت البدء من التخزين
   void _clearStartTime() {
     updateValue("audio_start_time", null);
+  }
+
+  // تحميل صورة القارئ وحفظها (بدون أي تكبير — عرض ثابت فقط)
+  Future<void> _downloadReciterPhoto(
+      BuildContext context, String? photoUrl, String reciterKey) async {
+    if (photoUrl == null || photoUrl.isEmpty || photoUrl == "null") {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("لا توجد صورة متاحة لهذا القارئ")),
+      );
+      return;
+    }
+    try {
+      final safeKey = reciterKey.replaceAll(RegExp(r'[\\/:*?"<>|]'), '').trim();
+      final dir = await getApplicationDocumentsDirectory();
+      final imagesDir = Directory("${dir.path}/reciter_images");
+      if (!await imagesDir.exists()) await imagesDir.create(recursive: true);
+      final localPath = "${imagesDir.path}/$safeKey.jpg";
+      if (!File(localPath).existsSync()) {
+        final res = await Dio().get(photoUrl,
+            options: Options(responseType: ResponseType.bytes));
+        await File(localPath).writeAsBytes(res.data);
+        updateValue("$reciterKey photo local", localPath);
+      }
+      final bytes = await File(localPath).readAsBytes();
+      await ImageGallerySaverPlus.saveImage(bytes, quality: 90);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("تم حفظ صورة القارئ")),
+        );
+      }
+    } catch (_) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("تعذر تحميل الصورة")),
+        );
+      }
+    }
   }
 
   // دوال التتبع الجديدة مع الحارس لمنع التكرار
@@ -237,12 +277,10 @@ class _PlayerBarState extends State<PlayerBar> with AutomaticKeepAliveClientMixi
                         child: Material(
                           color: Colors.transparent,
                           child: GestureDetector(
-                            onTap: () {
-                              // if (statee.height == 60) {
-                              BlocProvider.of<PlayerBarBloc>(context)
-                                  .add(ExtendBarEvent());
-                              // }
-                            },
+                            // التمدد لشاشة البلاير الكاملة ملغي: الشاشة الموسعة
+                            // كانت تظهر مربعاً رمادياً بدون فائدة، والشريط
+                            // المصغر يبقى ثابتاً مع كل الأزرار.
+                            onTap: null,
                             child: AnimatedContainer(
                               duration: const Duration(milliseconds: 300),
                               height: statee.height == 60
@@ -415,6 +453,40 @@ class _PlayerBarState extends State<PlayerBar> with AutomaticKeepAliveClientMixi
                                           SizedBox(
                                             width: 10.w,
                                           ),
+                                          Builder(builder: (context) {
+                                            final photoUrl = getValue(
+                                                "${state.reciter.name} photo url");
+                                            if (photoUrl == null) {
+                                              return const SizedBox.shrink();
+                                            }
+                                            return GestureDetector(
+                                              onTap: () =>
+                                                  _downloadReciterPhoto(
+                                                      context,
+                                                      photoUrl.toString(),
+                                                      state.reciter.name),
+                                              child: Container(
+                                                decoration: BoxDecoration(
+                                                    shape: BoxShape.circle,
+                                                    border: Border.all(
+                                                        color: Colors.white,
+                                                        width: 1.w)),
+                                                child: Center(
+                                                  child: Padding(
+                                                    padding: EdgeInsets.all(
+                                                        4.0.sp),
+                                                    child: const Icon(
+                                                      Icons.download,
+                                                      color: Colors.white,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ),
+                                            );
+                                          }),
+                                          SizedBox(
+                                            width: 10.w,
+                                          ),
                                           GestureDetector(
                                             onTap: () {
                                               BlocProvider.of<PlayerBarBloc>(
@@ -490,7 +562,8 @@ class _PlayerBarState extends State<PlayerBar> with AutomaticKeepAliveClientMixi
                                                 image: AssetImage(
                                                     "assets/images/framee.png"))),
                                         child: SafeArea(
-                                          bottom: false,
+                                          bottom: true,
+                                          top: true,
                                           child: Column(
                                           crossAxisAlignment:
                                               CrossAxisAlignment.center,
@@ -498,7 +571,7 @@ class _PlayerBarState extends State<PlayerBar> with AutomaticKeepAliveClientMixi
                                               MainAxisAlignment.start,
                                           children: [
                                             SizedBox(
-                                              height: 8.h,
+                                              height: 4.h,
                                             ),
                                             SizedBox(
                                               width: MediaQuery.of(context)
@@ -556,7 +629,7 @@ class _PlayerBarState extends State<PlayerBar> with AutomaticKeepAliveClientMixi
                                               ),
                                             ),
                                             SizedBox(
-                                              height: 35.h,
+                                              height: 12.h,
                                             ),
                                             // if (isPlaylistShown = false)
                                             Expanded(
@@ -603,7 +676,7 @@ class _PlayerBarState extends State<PlayerBar> with AutomaticKeepAliveClientMixi
                                                                     .9)),
                                                       ),
                                                       SizedBox(
-                                                        height: 30.h,
+                                                        height: 12.h,
                                                       ),
                                                       StreamBuilder(
                                                           stream: state
@@ -640,14 +713,21 @@ class _PlayerBarState extends State<PlayerBar> with AutomaticKeepAliveClientMixi
                                                                     child: Center(
                                                                         child: CircleAvatar(
                                                                             radius: isPlaylistShown == false ? 130.r : 60.r,
+                                                                            backgroundColor: getValue("darkMode")
+                                                                                ? quranPagesColorDark
+                                                                                : quranPagesColorLight,
+                                                                            // بديل محلي يظهر دائماً خلف صورة الشبكة
+                                                                            // (دون إنترنت كانت تظهر دائرة/مربع رمادي)
+                                                                            backgroundImage: const AssetImage(
+                                                                                "assets/images/quran.png"),
                                                                             foregroundImage: ((metadata.album ?? "").replaceAll("القارئ ", "").isNotEmpty && getValue("${(metadata.album ?? "").replaceAll("القارئ ", "")} photo url") != null)
                                                                                 ? CachedNetworkImageProvider(
                                                                                     getValue("${(metadata.album ?? "").replaceAll("القارئ ", "")} photo url"),
                                                                                   )
-                                                                                : null,
-                                                                            backgroundImage: CachedNetworkImageProvider(
-                                                                              metadata.artUri.toString(),
-                                                                            ))),
+                                                                                : CachedNetworkImageProvider(
+                                                                                    metadata.artUri.toString(),
+                                                                                  ),
+                                                                            onForegroundImageError: (_, __) {})),
                                                                   ),
                                                                 ),
                                                               );
@@ -655,6 +735,41 @@ class _PlayerBarState extends State<PlayerBar> with AutomaticKeepAliveClientMixi
                                                               return Container();
                                                             }
                                                           }),
+                                                      // زر تحميل صورة القارئ — بدون تكبير، الصورة عرض ثابت
+                                                      Builder(builder: (context) {
+                                                        final reciterKey =
+                                                            (metadata.album ?? "")
+                                                                .replaceAll(
+                                                                    "القارئ ",
+                                                                    "");
+                                                        final photoUrl = getValue(
+                                                            "$reciterKey photo url");
+                                                        if (reciterKey.isEmpty ||
+                                                            photoUrl == null) {
+                                                          return const SizedBox
+                                                              .shrink();
+                                                        }
+                                                        return TextButton.icon(
+                                                          onPressed: () =>
+                                                              _downloadReciterPhoto(
+                                                                  context,
+                                                                  photoUrl
+                                                                      .toString(),
+                                                                  reciterKey),
+                                                          icon: const Icon(
+                                                              Icons.download,
+                                                              color: Colors
+                                                                  .white70,
+                                                              size: 18),
+                                                          label: const Text(
+                                                            "تحميل صورة القارئ",
+                                                            style: TextStyle(
+                                                                color: Colors
+                                                                    .white70,
+                                                                fontSize: 12),
+                                                          ),
+                                                        );
+                                                      }),
                                                     ],
                                                   );
                                                 },
@@ -672,7 +787,7 @@ class _PlayerBarState extends State<PlayerBar> with AutomaticKeepAliveClientMixi
                                                   state.audioPlayer),
                                             ),
                                             // if (isPlaylistShown == false)
-                                            SizedBox(height: 30.0.h),
+                                            SizedBox(height: 12.0.h),
                                             // if (isPlaylistShown == true)
                                             // شريط التقدم: يستمع للمدة أولاً (قد تكون null أثناء
                                             // التحميل/الانتقال بين السور) ثم للموضع — يمنع كراش "!" وتجمد السلايدر.
@@ -1276,9 +1391,13 @@ class ControlButtons extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
+    // أزرار مكبرة بمناطق لمس مريحة (48dp) واتجاه RTL صحيح
+    return Directionality(
+      textDirection: m.TextDirection.rtl,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
         // IconButton(
         //   icon: const Icon(Icons.volume_up),
         //   onPressed: () {
@@ -1420,7 +1539,8 @@ class ControlButtons extends StatelessWidget {
             );
           },
         ),
-      ],
+        ],
+      ),
     );
   }
 }

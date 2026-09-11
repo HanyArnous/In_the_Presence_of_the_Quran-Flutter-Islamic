@@ -104,6 +104,29 @@ class MainActivity : AudioServiceActivity() {
                             .putBoolean("needs_reschedule", false).apply()
                         result.success(v)
                     }
+                    "canScheduleExact" -> {
+                        try {
+                            val am = getSystemService(Context.ALARM_SERVICE) as android.app.AlarmManager
+                            val v = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                                am.canScheduleExactAlarms()
+                            } else true
+                            result.success(v)
+                        } catch (_: Exception) {
+                            result.success(false)
+                        }
+                    }
+                    "openExactAlarmSettings" -> {
+                        try {
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                                val i = Intent(android.provider.Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM)
+                                i.data = android.net.Uri.parse("package:$packageName")
+                                startActivity(i)
+                            }
+                            result.success(true)
+                        } catch (e: Exception) {
+                            result.error("AZAN_ERROR", e.message, null)
+                        }
+                    }
                     else -> result.notImplemented()
                 }
             } catch (e: Exception) {

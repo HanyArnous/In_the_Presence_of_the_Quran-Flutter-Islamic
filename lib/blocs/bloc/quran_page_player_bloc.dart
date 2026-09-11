@@ -11,6 +11,8 @@ import 'package:path_provider/path_provider.dart';
 import 'package:quran/quran.dart' as quran;
 import 'package:quran/reciters.dart';
 import 'package:nabd/blocs/bloc/bloc/player_bar_bloc.dart';
+import 'package:nabd/blocs/bloc/player_bloc_bloc.dart';
+import 'package:nabd/core/home.dart';
 
 part 'quran_page_player_event.dart';
 part 'quran_page_player_state.dart';
@@ -62,7 +64,9 @@ class QuranPagePlayerBloc
               uri,
               tag: MediaItem(
                 id: "${event.surahNumber}:$verse",
-                album: reciterMatch["englishName"],
+                // الاسم العربي للقارئ حتى يعرضه شريط المشغل (كان englishName)
+                album: (reciterMatch["name"] ?? reciterMatch["englishName"])
+                    .toString(),
                 title: quran.getSurahNameArabic(event.surahNumber),
                 artUri: Uri.parse(
                   "https://images.pexels.com/photos/318451/pexels-photo-318451.jpeg",
@@ -94,7 +98,8 @@ class QuranPagePlayerBloc
                 Uri.file(fullPath),
                 tag: MediaItem(
                   id: "${event.surahNumber}:full",
-                  album: reciterMatch["englishName"],
+                  album: (reciterMatch["name"] ?? reciterMatch["englishName"])
+                      .toString(),
                   title: quran.getSurahNameArabic(event.surahNumber),
                   artUri: Uri.parse(
                     "https://images.pexels.com/photos/318451/pexels-photo-318451.jpeg",
@@ -122,6 +127,14 @@ class QuranPagePlayerBloc
                 reciter: reciterMatch,
               ),
             );
+            try {
+              playerPageBloc.add(SyncQuranPagePlaying(
+                reciterName: (reciterMatch["name"] ??
+                        reciterMatch["englishName"])
+                    .toString(),
+                suraNumber: event.surahNumber,
+              ));
+            } catch (_) {}
             return;
           } else {
             return;
@@ -130,6 +143,15 @@ class QuranPagePlayerBloc
 
         audioPlayer.play();
         playerbarBloc.add(ShowBarEvent());
+        // مزامنة شريط المشغل (الصوتيات) ليعرض القارئ العربي الصحيح
+        // حتى لو لم يُفتح الصوتيات أبداً — عرض فقط دون المساس بالمشغّل
+        try {
+          playerPageBloc.add(SyncQuranPagePlaying(
+            reciterName:
+                (reciterMatch["name"] ?? reciterMatch["englishName"]).toString(),
+            suraNumber: event.surahNumber,
+          ));
+        } catch (_) {}
 
         // طبّق وضع التكرار المختار من الشيت على هذا التشغيل
         await _startRepeatEnforcement(
@@ -176,6 +198,9 @@ class QuranPagePlayerBloc
           await audioPlayer.setLoopMode(LoopMode.off);
         } catch (_) {}
         await audioPlayer.stop();
+        try {
+          playerPageBloc.add(ClosePlayerEvent());
+        } catch (_) {}
         emit(QuranPagePlayerInitial());
       } else if (event is KillPlayerEvent) {
         _cancelRepeat();
@@ -183,6 +208,9 @@ class QuranPagePlayerBloc
           await audioPlayer.setLoopMode(LoopMode.off);
         } catch (_) {}
         await audioPlayer.stop();
+        try {
+          playerPageBloc.add(ClosePlayerEvent());
+        } catch (_) {}
         emit(QuranPagePlayerInitial());
       } else if (event is SetSpeed) {
         final newSpeed = event.speed.clamp(0.5, 2.0);

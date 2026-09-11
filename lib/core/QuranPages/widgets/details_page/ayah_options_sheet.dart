@@ -464,8 +464,31 @@ class _AyahOptionsSheetState extends State<AyahOptionsSheet> {
                                     getValue("quranPageolorsIndex")],
                                 isDense: true,
                                 onChanged: (int? newIndex) {
+                                  if (newIndex == null) return;
+                                  final wasPlaying =
+                                      qurapPagePlayerBloc.state
+                                          is QuranPagePlayerPlaying;
                                   updateValue("reciterIndex", newIndex);
                                   setState(() {});
+                                  // إعادة التشغيل بالقارئ الجديد فوراً إذا كان هناك تشغيل جارٍ
+                                  if (wasPlaying) {
+                                    final newReciter =
+                                        reciters[newIndex];
+                                    qurapPagePlayerBloc
+                                        .add(KillPlayerEvent());
+                                    final newBounds =
+                                        _pageBoundsForSurah(
+                                            widget.surahNumber,
+                                            widget.index);
+                                    qurapPagePlayerBloc.add(PlayFromVerse(
+                                        widget.verseNumber,
+                                        newReciter.identifier,
+                                        widget.surahNumber,
+                                        quran.getSurahNameEnglish(
+                                            widget.surahNumber),
+                                        pageStartVerse: newBounds?[0],
+                                        pageEndVerse: newBounds?[1]));
+                                  }
                                 },
                                 items: reciters.map((reciter) {
                                   return DropdownMenuItem<int>(

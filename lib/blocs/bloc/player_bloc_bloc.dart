@@ -200,6 +200,35 @@ class PlayerBlocBloc extends Bloc<PlayerBlocEvent, PlayerBlocState> {
           debugPrint("❌ Fatal Playback Error: $e");
           // هنا يمكن إضافة محاولات إعادة التشغيل التي كنت تستخدمها
         }
+      } else if (event is SyncQuranPagePlaying) {
+        // عرض فقط: شريط المشغل يعكس تشغيل صفحات القرآن دون المساس بالمشغّل
+        try {
+          await _listeningSubscription?.cancel();
+        } catch (_) {}
+        _listeningSubscription = null;
+        updateValue("listening_source", "quran_pages");
+        emit(PlayerBlocPlaying(
+          moshaf: Moshaf(
+              id: 'quran_page',
+              name: 'صفحات القرآن',
+              server: '',
+              surahTotal: 114,
+              moshafType: 'page',
+              surahList: ''),
+          reciter: Reciter(
+              id: 'quran_page', name: event.reciterName, letter: 'ق', moshaf: []),
+          suraNumber: event.suraNumber,
+          jsonData: const [],
+          audioPlayer: audioPlayer,
+          surahNumbers: const [],
+          playList: const [],
+        ));
+      } else if (event is ClosePlayerEvent) {
+        try {
+          await _listeningSubscription?.cancel();
+        } catch (_) {}
+        _listeningSubscription = null;
+        emit(PlayerBlocClosed());
       } else if (event is DownloadSurah) {
         await _requestPermissions();
         final arnousDir = Directory("/storage/emulated/0/Download/arnous/");

@@ -49,3 +49,11 @@ class DownloadAllSurahs extends PlayerBlocEvent {
 
 class ClosePlayerEvent extends PlayerBlocEvent {}
 class PausePlayer extends PlayerBlocEvent {}
+
+/// مزامنة شريط المشغل مع تشغيل صفحات القرآن (QuranPagePlayerBloc).
+/// يعرض الاسم فقط دون المساس بالمشغّل — التشغيل الفعلي يديره بلوك الصفحات.
+class SyncQuranPagePlaying extends PlayerBlocEvent {
+  final String reciterName;
+  final int suraNumber;
+  SyncQuranPagePlaying({required this.reciterName, required this.suraNumber});
+}

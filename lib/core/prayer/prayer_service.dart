@@ -365,6 +365,7 @@ class PrayerService {
     if (pos == null) return null;
     updateValue("prayer_lat", pos.latitude);
     updateValue("prayer_lng", pos.longitude);
+    bool citySaved = false;
     try {
       final placemarks =
           await placemarkFromCoordinates(pos.latitude, pos.longitude);
@@ -389,12 +390,20 @@ class PrayerService {
         // آخر ملاذ: اعرض البلد كمدينة بدل "غير محدد" (مثلاً: مصر)
         if (city.isNotEmpty) {
           updateValue("prayer_city", city);
+          citySaved = true;
         } else if (country.isNotEmpty) {
           updateValue("prayer_city", country);
+          citySaved = true;
         }
         if (country.isNotEmpty) updateValue("prayer_country", country);
       }
     } catch (_) {}
+    // الترجمة الجغرافية قد تفشل (أوفلاين/بدون خدمات جوجل) رغم حفظ الإحداثيات —
+    // ثبّت label افتراضي حتى لا يبقى الموقع "غير محدد" والتوقيت صحيح.
+    if (!citySaved &&
+        (getValue("prayer_city")?.toString().trim().isEmpty ?? true)) {
+      updateValue("prayer_city", "موقعي الحالي");
+    }
     return Coordinates(pos.latitude, pos.longitude);
   }
 

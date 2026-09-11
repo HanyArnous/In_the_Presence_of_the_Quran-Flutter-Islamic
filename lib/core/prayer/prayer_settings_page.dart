@@ -24,6 +24,14 @@ class _PrayerSettingsPageState extends State<PrayerSettingsPage> {
     enabled = Map<String, bool>.from(getValue("prayer_enabled") ?? {"Fajr":true,"Dhuhr":true,"Asr":true,"Maghrib":true,"Isha":true});
     method = getValue("prayer_method") ?? "egyptian";
     madhab = getValue("prayer_madhab") ?? "shafi";
+    // إصلاح رجعي: إحداثيات محفوظة بدون اسم مدينة (فشل ترجمة سابق)
+    // ← ثبّت "موقعي الحالي" بدل بقاء "غير محدد".
+    final lat = getValue("prayer_lat");
+    final lng = getValue("prayer_lng");
+    if (lat is num && lng is num &&
+        (getValue("prayer_city")?.toString().trim().isEmpty ?? true)) {
+      updateValue("prayer_city", "موقعي الحالي");
+    }
     _checkExact();
   }
 
@@ -54,7 +62,15 @@ class _PrayerSettingsPageState extends State<PrayerSettingsPage> {
   Widget build(BuildContext context) {
     final coords = PrayerService.getTodayPrayerTimesMap();
     final next = PrayerService.getNextPrayer();
-    final city = getValue("prayer_city")?.toString() ?? "غير محدد";
+    // إن لم يُحفظ اسم مدينة لكن توجد إحداثيات (موقع مأخوذ فعلاً) اعرض
+    // "موقعي الحالي" بدل "غير محدد" المضلل.
+    final lat = getValue("prayer_lat");
+    final lng = getValue("prayer_lng");
+    final hasCoords = lat is num && lng is num;
+    final savedCity = getValue("prayer_city")?.toString().trim() ?? "";
+    final city = savedCity.isNotEmpty
+        ? savedCity
+        : (hasCoords ? "موقعي الحالي" : "غير محدد");
     return Scaffold(
       appBar: AppBar(
         title: const Text("إعدادات الأذان", style: TextStyle(fontFamily: "cairo")),

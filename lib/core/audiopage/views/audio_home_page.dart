@@ -137,7 +137,7 @@ class _RecitersPageState extends State<RecitersPage> {
             .compareTo(b.name.toString().toLowerCase()));
         
         rewayat = data2.map((reciter) => Moshaf.fromJson(reciter)).toList();
-        // تنقية كاش أسماء السور: إزالة الألف الخنجرية U+0670 لتوافق خط qaloon
+        // تنقية كاش أسماء السور: إزالة الألف الخنجرية U+0670
         // (42 الشورى، 55 الرحمن، 87 الأعلى، 93 الضحى كانت تظهر بمسافة/حرف مخفي)
         suwar = (data3).map((e) {
           if (e is Map) {

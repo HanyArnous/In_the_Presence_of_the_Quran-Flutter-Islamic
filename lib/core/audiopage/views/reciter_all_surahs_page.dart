@@ -813,8 +813,11 @@ class _RecitersSurahListPageState extends State<RecitersSurahListPage> {
                             _resolveSurahName(
                                 surah["surahNumber"], surah["suraName"]),
                             style: TextStyle(
+                                // خط cairo بدل qaloon: qaloon يرسم الألف المقصورة ى
+                                // في آخر (الشورى/الأعلى/الضحى) بشكل خاطئ مع مسافة،
+                                // وcairo هو نفس خط قائمة السور الرئيسية السليمة.
                                 fontFamily: context.locale.languageCode == "ar"
-                                    ? "qaloon"
+                                    ? "cairo"
                                     : "roboto",
                                 fontSize: context.locale.languageCode == "ar"
                                     ? 22.sp

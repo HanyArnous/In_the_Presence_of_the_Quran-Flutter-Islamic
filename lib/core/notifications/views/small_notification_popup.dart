@@ -1,7 +1,8 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_overlay_window/flutter_overlay_window.dart';
+// ملاحظة بلاي ستور: أُزيلت flutter_overlay_window (لا showOverlay حي).
+// هذه الشاشة غير مستخدمة حالياً وتُبقى كمرجع UI فقط وتُغلق عبر Navigator.
 import 'package:nabd/GlobalHelpers/constants.dart';
 
 class TrueCallerOverlay extends StatefulWidget {
@@ -30,12 +31,7 @@ class _TrueCallerOverlayState extends State<TrueCallerOverlay> {
   @override
   void initState() {
     super.initState();
-    FlutterOverlayWindow.overlayListener.listen((event) {
-      // log("$event");
-      setState(() {
-        isGold = !isGold;
-      });
-    });
+    // كان هنا مستمع overlay — أُزيل مع الحزمة (لا نافذة عائمة حالياً).
   }
 
   List<String> azkarList = [
@@ -84,7 +80,9 @@ class _TrueCallerOverlayState extends State<TrueCallerOverlay> {
             child: GestureDetector(
               onTap: () async {
                 setState(() {});
-                await FlutterOverlayWindow.closeOverlay();
+                if (mounted && Navigator.canPop(context)) {
+                  Navigator.pop(context);
+                }
               },
               child: Stack(
                 children: [
@@ -108,7 +106,9 @@ class _TrueCallerOverlayState extends State<TrueCallerOverlay> {
                       child: IconButton(
                         onPressed: () async {
                           setState(() {});
-                          await FlutterOverlayWindow.closeOverlay();
+                          if (context.mounted && Navigator.canPop(context)) {
+                            Navigator.pop(context);
+                          }
                         },
                         icon: const Icon(
                           Icons.close,

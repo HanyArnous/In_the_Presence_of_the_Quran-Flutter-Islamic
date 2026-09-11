@@ -28,64 +28,96 @@ class _HadithBooksPageState extends State<HadithBooksPage> {
   bool isLoading = true;
   bool downloadingAll = false;
   int downloadedCount = 0;
+  String? errorMessage;
   getCategories() async {
     final lang = context.locale.languageCode;
     categories = [];
+    errorMessage = null;
     categories.add(Category(
         id: "100000",
         title: "allHadith".tr(),
         hadeethsCount: "2000+",
         parentId: "parentId"));
-    final SharedPreferences prefs = await SharedPreferences.getInstance();
-    if (prefs.getString("categories-$lang") == null) {
-      Response response = await Dio().get(
-          "https://hadeethenc.com/api/v1/categories/roots/?language=$lang");
-      print(response.data);
-      await response.data
-          .forEach((cat) => categories.add(Category.fromJson(cat)));
-      print(categories.length);
-      await prefs.setString("categories-$lang", json.encode(response.data));
-      isLoading = false;
-    } else {
-      print("stored offline");
-      final jsonData = prefs.getString("categories-$lang");
-
-      if (jsonData != null) {
-        final data = json.decode(jsonData) as List<dynamic>;
-        for (var cat in data) {
-          categories.add(Category.fromJson(cat));
+    try {
+      final dio = Dio(BaseOptions(
+        connectTimeout: const Duration(seconds: 15),
+        receiveTimeout: const Duration(seconds: 30),
+        sendTimeout: const Duration(seconds: 15),
+      ));
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      if (prefs.getString("categories-$lang") == null) {
+        Response response = await dio.get(
+            "https://hadeethenc.com/api/v1/categories/roots/?language=$lang");
+        final items = response.data is List ? response.data : [];
+        for (var cat in items) {
+          try {
+            categories.add(Category.fromJson(cat));
+          } catch (_) {}
         }
+        if (categories.length > 1) {
+          await prefs.setString("categories-$lang", json.encode(items));
+        }
+      } else {
+        final jsonData = prefs.getString("categories-$lang");
 
-        // starredRadios = json.decode(getValue("starredRadios"));
-        setState(() {
-          // radiosData = data;
-          isLoading = false;
-        });
-        if (lang == "ar") {
-          final english = RegExp(r'[a-zA-Z]');
-          final hasEnglishTitles =
-              categories.any((c) => english.hasMatch(c.title));
-          if (hasEnglishTitles) {
-            Response response = await Dio().get(
-                "https://hadeethenc.com/api/v1/categories/roots/?language=ar");
-            categories = [
-              Category(
-                  id: "100000",
-                  title: "allHadith".tr(),
-                  hadeethsCount: "2000+",
-                  parentId: "parentId")
-            ];
-            await response.data
-                .forEach((cat) => categories.add(Category.fromJson(cat)));
-            await prefs.setString(
-                "categories-$lang", json.encode(response.data));
-            setState(() {});
+        if (jsonData != null) {
+          final data = json.decode(jsonData) as List<dynamic>;
+          for (var cat in data) {
+            try {
+              categories.add(Category.fromJson(cat));
+            } catch (_) {}
+          }
+
+          if (lang == "ar") {
+            final english = RegExp(r'[a-zA-Z]');
+            final hasEnglishTitles =
+                categories.any((c) => english.hasMatch(c.title));
+            if (hasEnglishTitles) {
+              Response response = await dio.get(
+                  "https://hadeethenc.com/api/v1/categories/roots/?language=ar");
+              categories = [
+                Category(
+                    id: "100000",
+                    title: "allHadith".tr(),
+                    hadeethsCount: "2000+",
+                    parentId: "parentId")
+              ];
+              final items =
+                  response.data is List ? response.data : [];
+              for (var cat in items) {
+                try {
+                  categories.add(Category.fromJson(cat));
+                } catch (_) {}
+              }
+              if (categories.length > 1) {
+                await prefs.setString(
+                    "categories-$lang", json.encode(items));
+              }
+            }
           }
         }
       }
+      // أول عنصر هو "كل الأحاديث" — إن لم تُجلب تصنيفات حقيقية فالصفحة فارغة
+      if (categories.length <= 1) {
+        errorMessage = "تعذّر تحميل التصنيفات — تحقق من الإنترنت ثم أعد المحاولة";
+      }
+    } catch (_) {
+      if (categories.length <= 1) {
+        errorMessage = "تعذّر تحميل التصنيفات — تحقق من الإنترنت ثم أعد المحاولة";
+      }
+    } finally {
+      isLoading = false;
     }
 
-    setState(() {});
+    if (mounted) setState(() {});
+  }
+
+  void _retry() {
+    setState(() {
+      isLoading = true;
+      errorMessage = null;
+    });
+    getCategories();
   }
 
   @override
@@ -178,7 +210,41 @@ class _HadithBooksPageState extends State<HadithBooksPage> {
                     : quranPagesColorLight,
               ),
             )
-          : ListView.builder(
+          : (errorMessage != null && categories.length <= 1)
+              ? Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24.0),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.cloud_off_outlined,
+                            size: 56,
+                            color: getValue("darkMode")
+                                ? Colors.white54
+                                : Colors.black45),
+                        const SizedBox(height: 12),
+                        Text(
+                          errorMessage!,
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                              fontFamily: "cairo",
+                              fontSize: 15,
+                              color: getValue("darkMode")
+                                  ? Colors.white70
+                                  : Colors.black87),
+                        ),
+                        const SizedBox(height: 16),
+                        ElevatedButton.icon(
+                          onPressed: _retry,
+                          icon: const Icon(Icons.refresh),
+                          label: const Text("إعادة المحاولة",
+                              style: TextStyle(fontFamily: "cairo")),
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+              : ListView.builder(
               itemCount: categories.length,
               itemBuilder: (BuildContext context, int index) {
                 return Padding(

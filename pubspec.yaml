@@ -76,6 +76,7 @@ dependencies:
   path_provider: ^2.1.5
   flutter_displaymode: ^0.6.0
   share_plus: ^11.0.0
+  url_launcher: # مستخدم فعلياً في home.dart + صفحة الدعم لرابط سياسة الخصوصية (تثبيت مباشر بدل الاعتماد الضمني)
   flutter_html:
   easy_localization: ^3.0.3
   screenshot: ^3.0.0
@@ -106,12 +107,12 @@ dependencies:
   timezone: ^0.10.1
   flutter_timezone: ^4.1.0
   file_picker: ^8.1.0
-  flutter_overlay_window: 
+  # flutter_overlay_window محذوف: لا يوجد showOverlay حي — كان يجلب SYSTEM_ALERT_WINDOW ويفتح إقرار بلاي بلا فائدة
   workmanager:
   flutter_colorpicker: 
   arabic_roman_conv: 
-  chewie:
-  radio_player:
+  # chewie محذوف: كل استخداماته مُعلّقة في live_tv_page.dart و shortvideos.dart
+  # radio_player محذوف: radio_page.dart مُعلّق بالكامل
   in_app_review:
   # circular_progress_bar: 
   geocoding:
@@ -119,9 +120,8 @@ dependencies:
   #   path: ./periodic_alarm
   jhijri_picker: 
   hijri: 
-  tiktoklikescroller: 
-  in_app_update: 
-  # in_app_review: ^2.0.8
+  # tiktoklikescroller محذوف: shortvideos.dart مُعلّق بالكامل
+  # in_app_update محذوف: كل استدعاءاته مُعلّقة في home.dart — يُعاد عند الحاجة
   string_validator: 
   
 

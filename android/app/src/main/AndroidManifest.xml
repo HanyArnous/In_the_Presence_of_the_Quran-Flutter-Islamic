@@ -15,7 +15,9 @@
     <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
-    <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
+    <!-- USE_EXACT_ALARM محذوف عمداً: يقتصر على تطبيقات المنبه/التقويم بسياسة بلاي، و SCHEDULE_EXACT_ALARM مع fallback غير دقيق يكفي للأذان عبر AzanScheduler -->
+    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
+    <!-- REQUEST_IGNORE_BATTERY_OPTIMIZATIONS محذوف عمداً: مرفوض في مراجعة بلاي إلا لحالات نادرة، والأذان يعمل عبر AlarmManager + ForegroundService بدونها -->
     <uses-permission android:name="android.permission.VIBRATE" />
 
     <application
@@ -49,6 +51,27 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
+
+        <service
+            android:name=".AzanForegroundService"
+            android:foregroundServiceType="mediaPlayback"
+            android:exported="false"
+            tools:ignore="Instantiatable" />
+
+        <receiver android:exported="false" android:name=".AzanAlarmReceiver">
+            <intent-filter>
+                <action android:name="com.hanyarnous.quranpresence.AZAN_ALARM" />
+            </intent-filter>
+        </receiver>
+
+        <receiver android:exported="false" android:name=".AzanBootReceiver">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED"/>
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED"/>
+                <action android:name="android.intent.action.QUICKBOOT_POWERON" />
+                <action android:name="com.htc.intent.action.QUICKBOOT_POWERON"/>
+            </intent-filter>
+        </receiver>
 
         <service
             android:name="com.ryanheise.audioservice.AudioService"

@@ -26,13 +26,13 @@ void callbackDispatcher() {
           const InitializationSettings(android: initializationSettingsAndroid));
 
       final List<String> channelIds = [
-        'zikr_channel',
-        'prayer_channel',
-        'ayah_channel',
-        'hadith_channel'
+        kZikrChannelId,
+        'prayer_channel_v2',
+        kAyahChannelId,
+        kHadithChannelId
       ];
       for (var id in channelIds) {
-        final isPrayer = id == 'prayer_channel';
+        final isPrayer = id == 'prayer_channel_v2';
         await flutterLocalNotificationsPlugin
             .resolvePlatformSpecificImplementation<
                 AndroidFlutterLocalNotificationsPlugin>()
@@ -51,7 +51,7 @@ void callbackDispatcher() {
           break;
         case "sallahEnable":
           await _showNotification(
-              _randomId(), "ذكر الله", "اللهم صلِ وسلم على نبينا محمد", "prayer_channel");
+              _randomId(), "ذكر الله", "اللهم صلِ وسلم على نبينا محمد", "prayer_channel_v2");
           break;
         case "hadithNot":
         case "hadithNotTest":
@@ -74,9 +74,47 @@ void callbackDispatcher() {
 
 int _randomId() => DateTime.now().millisecondsSinceEpoch % 2147483647;
 
+// قنوات الإشعارات — v2 لكسر أي قناة صامتة عالقة على الأجهزة (إعدادات القناة
+// ثابتة بعد أول إنشاء، فتغيير الـ id يجبر النظام على قناة جديدة بالصوت).
+const String kAyahChannelId = 'ayah_channel_v2';
+const String kHadithChannelId = 'hadith_channel_v2';
+const String kZikrChannelId = 'zikr_channel_v2';
+const List<String> kObsoleteChannelIds = [
+  'ayah_channel',
+  'hadith_channel',
+  'zikr_channel',
+];
+
+/// ينقّي نص الآية/الحديث لعرض سليم بخط نظام الأندرويد داخل الإشعار:
+/// يزيل التشكيل والعلامات القرآنية والرموز الخاصة (﴿﴾ ۝ ﷺ) التي تظهر
+/// مكسّرة أو مربعات في شريط الإشعارات، ويوحّد المسافات. يعمل في
+/// عزل الخلفية (دوال خالصة فقط).
+String _cleanNotificationText(String raw) {
+  String t = raw;
+  try {
+    t = quran.removeDiacritics(t);
+  } catch (_) {}
+  t = t.replaceAll(RegExp('[\u0610-\u061A\u06D6-\u06ED\u0670\u0640]'), '');
+  t = t.replaceAll(RegExp('[﴿﴾۝]'), '');
+  t = t.replaceAll('ﷺ', 'صلى الله عليه وسلم');
+  t = t.replaceAll(RegExp(r'\s+'), ' ').trim();
+  return t;
+}
+
+/// قص عند حد كلمة حتى لا يُشطر حرف أو كلمة في منتصفها.
+String _truncateAtWord(String text, int maxLen) {
+  if (text.length <= maxLen) return text;
+  final cut = text.substring(0, maxLen);
+  final lastSpace = cut.lastIndexOf(' ');
+  if (lastSpace > (maxLen * 0.5).toInt()) {
+    return '${cut.substring(0, lastSpace)}…';
+  }
+  return '$cut…';
+}
+
 Future<void> _showRandomAyahNotification() async {
   final random = Random();
-  String ayahText = "﴿فَاذْكُرُونِي أَذْكُرْكُمْ﴾";
+  String ayahText = "فاذكروني أذكركم";
   String title = "آية اليوم";
   int surah = 2;
   int verse = 152;
@@ -108,9 +146,9 @@ Future<void> _showRandomAyahNotification() async {
       if (attempt == 19) break;
     }
 
-    // جلب نص الآية
+    // جلب نص الآية وتنقيته لخط النظام (بدون تشكيل/رموز) ثم قص عند حد كلمة
     try {
-      ayahText = quran.getVerse(surah, verse);
+      ayahText = _cleanNotificationText(quran.getVerse(surah, verse));
       String surahName;
       try {
         surahName = quran.getSurahNameArabic(surah);
@@ -118,10 +156,8 @@ Future<void> _showRandomAyahNotification() async {
         surahName = "سورة $surah";
       }
       title = "$surahName - آية $verse";
-      if (ayahText.length > 140) {
-        ayahText = ayahText.substring(0, 140) + "…";
-      }
-      ayahText = ayahText.trim();
+      ayahText = _truncateAtWord(ayahText, 120);
+      if (ayahText.isEmpty) ayahText = "فاذكروني أذكركم";
     } catch (_) {
       // fallback
     }
@@ -135,17 +171,17 @@ Future<void> _showRandomAyahNotification() async {
     } catch (_) {}
   } catch (_) {}
 
-  await _showNotification(_randomId(), title, ayahText, "ayah_channel");
+  await _showNotification(_randomId(), title, ayahText, kAyahChannelId);
 }
 
 Future<void> _showRandomHadithNotification() async {
   final random = Random();
-  String body = "قال رسول الله ﷺ: الدال على الخير كفاعله";
+  String body = "قال رسول الله صلى الله عليه وسلم: الدال على الخير كفاعله";
   String title = "حديث اليوم";
 
   try {
     if (hadithes.isEmpty) {
-      await _showNotification(_randomId(), title, body, "hadith_channel");
+      await _showNotification(_randomId(), title, body, kHadithChannelId);
       return;
     }
 
@@ -176,19 +212,17 @@ Future<void> _showRandomHadithNotification() async {
       }
     }
 
-    // جلب النص
+    // جلب النص وتنقيته لخط النظام ثم قص عند حد كلمة
     try {
       final item = hadithes[idx];
       String rawHadith = (item["hadith"] ?? item["text"] ?? body).toString();
-      // نظف
-      rawHadith = rawHadith.replaceAll(RegExp(r'\s+'), ' ').trim();
-      // خذ أول 140 حرف
+      rawHadith = _cleanNotificationText(rawHadith);
+      // حاول قطع عند فاصلة عربية إن وجدت بعد التنقية
       if (rawHadith.length > 140) {
-        // حاول قطع عند جملة
         String cut = rawHadith.substring(0, 140);
-        int lastDot = cut.lastIndexOf("،");
-        if (lastDot > 80) cut = cut.substring(0, lastDot);
-        body = cut + "…";
+        int lastComma = cut.lastIndexOf("،");
+        if (lastComma > 80) cut = cut.substring(0, lastComma);
+        body = '$cut…';
       } else {
         body = rawHadith;
       }
@@ -210,7 +244,7 @@ Future<void> _showRandomHadithNotification() async {
     } catch (_) {}
   } catch (_) {}
 
-  await _showNotification(_randomId(), title, body, "hadith_channel");
+  await _showNotification(_randomId(), title, body, kHadithChannelId);
 }
 
 Future<void> _showRandomZikrNotification() async {
@@ -232,12 +266,12 @@ Future<void> _showRandomZikrNotification() async {
     }
     await Hive.box("name").put("lastZikrText", picked);
   } catch (_) {}
-  await _showNotification(_randomId(), "ذكر اليوم", picked, "zikr_channel");
+  await _showNotification(_randomId(), "ذكر اليوم", picked, kZikrChannelId);
 }
 
 Future<void> _showNotification(
     int id, String title, String body, String channel) async {
-  final isPrayer = channel == 'prayer_channel';
+  final isPrayer = channel == 'prayer_channel_v2';
   await flutterLocalNotificationsPlugin.show(
       id,
       title,
@@ -254,7 +288,7 @@ Future<void> _showNotification(
             visibility: NotificationVisibility.public,
             category: isPrayer ? AndroidNotificationCategory.alarm : AndroidNotificationCategory.reminder,
             fullScreenIntent: isPrayer,
-            timeoutAfter: isPrayer ? 60000 : null,
+            timeoutAfter: isPrayer ? 5 * 60 * 1000 : null,
             styleInformation: BigTextStyleInformation(
               body,
               htmlFormatBigText: false,
@@ -275,4 +309,33 @@ void initMessaging() async {
   final InitializationSettings initializationSettings =
       InitializationSettings(android: initializationSettingsAndroid);
   await flutterLocalNotificationsPlugin.initialize(initializationSettings);
+  // أنشئ القنوات في الواجهة الأمامية مبكراً (مع الصوت) حتى لا يعتمد
+  // أول إشعار على تهيئة مهمة الخلفية، واحذف القنوات القديمة الصامتة.
+  await initNotificationChannels();
+}
+
+/// إنشاء قنوات الإشعارات (آية/حديث/ذكر) بالصوت + حذف القديمة.
+/// آمن للاستدعاء المتكرر ومن الواجهة أو الخلفية.
+Future<void> initNotificationChannels() async {
+  try {
+    final android =
+        flutterLocalNotificationsPlugin.resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin>();
+    if (android == null) return;
+    for (final id in [kAyahChannelId, kHadithChannelId, kZikrChannelId]) {
+      await android.createNotificationChannel(AndroidNotificationChannel(
+        id,
+        id.replaceAll('_channel_v2', '').replaceAll('_', ' '),
+        importance: Importance.max,
+        sound: const RawResourceAndroidNotificationSound('notification'),
+        playSound: true,
+        enableVibration: true,
+      ));
+    }
+    for (final old in kObsoleteChannelIds) {
+      try {
+        await android.deleteNotificationChannel(old);
+      } catch (_) {}
+    }
+  } catch (_) {}
 }

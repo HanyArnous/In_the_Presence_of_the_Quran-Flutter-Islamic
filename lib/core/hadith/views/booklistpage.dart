@@ -32,55 +32,77 @@ class HadithList extends StatefulWidget {
 class _HadithListState extends State<HadithList> {
   bool isLoading = true;
   List<HadithMin> hadithes = [];
+  String? errorMessage;
 
   getHadithList() async {
     hadithes = [];
-    final SharedPreferences prefs = await SharedPreferences.getInstance();
-    final jsonData =
-        prefs.getString("hadithlist-${widget.id}-${widget.locale}");
-    if (widget.id == "100000"&&prefs.getString("hadithlist-100000-${widget.locale}")!=null) {
-      final jsonData = prefs.getString("hadithlist-100000-${widget.locale}");
-      final data = json.decode(jsonData!) as List<dynamic>;
-      for (var hadith in data) {
-        if (hadithes
-                .indexWhere((element) => element.title == hadith["title"]) ==
-            -1) {
-          hadithes.add(HadithMin.fromJson(hadith));
-        } else {}
+    errorMessage = null;
+    try {
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      final key = "hadithlist-${widget.id}-${widget.locale}";
+      bool loaded = false;
+      // 1) الكاش أولاً — لكن الفارغ/التالف يُعامل كمفقود ويُعاد الجلب
+      try {
+        final jsonData = prefs.getString(key);
+        if (jsonData != null) {
+          final data = json.decode(jsonData) as List<dynamic>;
+          if (data.isNotEmpty) {
+            for (var hadith in data) {
+              try {
+                hadithes.add(HadithMin.fromJson(hadith));
+              } catch (_) {}
+            }
+            loaded = hadithes.isNotEmpty;
+          }
+        }
+      } catch (_) {
+        loaded = false;
       }
-
-      // starredRadios = json.decode(getValue("starredRadios"));
-      setState(() {
-        // radiosData = data;
-        isLoading = false;
-      });
-    }
-    if (jsonData != null) {
-      print("notnull");
-
-      final data = json.decode(jsonData) as List<dynamic>;
-      for (var hadith in data) {
-        hadithes.add(HadithMin.fromJson(hadith));
+      // 2) الشبكة عند غياب كاش صالح
+      if (!loaded) {
+        final dio = Dio(BaseOptions(
+          connectTimeout: const Duration(seconds: 15),
+          receiveTimeout: const Duration(seconds: 45),
+          sendTimeout: const Duration(seconds: 15),
+        ));
+        final Response response = await dio.get(
+            "https://hadeethenc.com/api/v1/hadeeths/list/?language=${widget.locale}&category_id=${widget.id}&per_page=699999");
+        final dynamic payload =
+            response.data is Map ? response.data["data"] : response.data;
+        if (payload is List) {
+          for (var hadith in payload) {
+            try {
+              hadithes.add(HadithMin.fromJson(hadith));
+            } catch (_) {}
+          }
+          // لا تحفظ قائمة فارغة حتى لا تُجمّد الصفحة فارغة للأبد
+          if (hadithes.isNotEmpty) {
+            try {
+              await prefs.setString(key, json.encode(payload));
+            } catch (_) {}
+          }
+        }
       }
-
-      // starredRadios = json.decode(getValue("starredRadios"));
-      setState(() {
-        // radiosData = data;
-        isLoading = false;
-      });
-    } else {
-      Response response = await Dio().get(
-          "https://hadeethenc.com/api/v1/hadeeths/list/?language=${widget.locale}&category_id=${widget.id}&per_page=699999");
-      print("response.datlength");
-      print(response.data["data"].length);
-      await response.data["data"]
-          .forEach((hadith) => hadithes.add(HadithMin.fromJson(hadith)));
-      setState(() {
-        isLoading = false;
-      });
+      if (hadithes.isEmpty) {
+        errorMessage = "لا توجد أحاديث هنا بعد — تحقق من الإنترنت ثم أعد المحاولة";
+      }
+    } catch (_) {
+      errorMessage = "تعذّر تحميل الأحاديث — تحقق من الإنترنت ثم أعد المحاولة";
     }
     tempHadithes = hadithes;
-    print(hadithes.length);
+    if (mounted) {
+      setState(() {
+        isLoading = false;
+      });
+    }
+  }
+
+  void _retry() {
+    setState(() {
+      isLoading = true;
+      errorMessage = null;
+    });
+    getHadithList();
   }
 
   @override
@@ -112,7 +134,41 @@ class _HadithListState extends State<HadithList> {
             ? const Center(
                 child: CircularProgressIndicator(),
               )
-            : CustomScrollView(
+            : (errorMessage != null && hadithes.isEmpty)
+                ? Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(24.0),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.cloud_off_outlined,
+                              size: 56,
+                              color: getValue("darkMode")
+                                  ? Colors.white54
+                                  : Colors.black45),
+                          const SizedBox(height: 12),
+                          Text(
+                            errorMessage!,
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                                fontFamily: "cairo",
+                                fontSize: 15,
+                                color: getValue("darkMode")
+                                    ? Colors.white70
+                                    : Colors.black87),
+                          ),
+                          const SizedBox(height: 16),
+                          ElevatedButton.icon(
+                            onPressed: _retry,
+                            icon: const Icon(Icons.refresh),
+                            label: const Text("إعادة المحاولة",
+                                style: TextStyle(fontFamily: "cairo")),
+                          ),
+                        ],
+                      ),
+                    ),
+                  )
+                : CustomScrollView(
                 slivers: [
                   SliverAppBar(
                     floating: true,

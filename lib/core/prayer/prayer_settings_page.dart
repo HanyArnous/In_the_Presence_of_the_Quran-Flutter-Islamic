@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:nabd/GlobalHelpers/hive_helper.dart';
+import 'package:nabd/core/prayer/azan_alert_page.dart';
 import 'package:nabd/core/prayer/prayer_service.dart';
-import 'package:permission_handler/permission_handler.dart';
 
 class PrayerSettingsPage extends StatefulWidget {
   const PrayerSettingsPage({super.key});
@@ -62,8 +62,22 @@ class _PrayerSettingsPageState extends State<PrayerSettingsPage> {
               title: Text("الموقع: $city", style: const TextStyle(fontFamily: "cairo")),
               subtitle: Text(getValue("prayer_country")?.toString() ?? "", style: const TextStyle(fontFamily: "cairo")),
               trailing: TextButton(onPressed: () async {
-                await PrayerService.fetchAndSaveLocation(context);
-                await PrayerService.scheduleAllPrayers();
+                final coords =
+                    await PrayerService.fetchAndSaveLocation(context);
+                if (!context.mounted) return;
+                if (coords != null) {
+                  await PrayerService.scheduleAllPrayers();
+                  final city =
+                      getValue("prayer_city")?.toString() ?? "";
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                      content: Text(
+                          city.isNotEmpty
+                              ? "تم حفظ الموقع: $city ✓"
+                              : "تم حفظ الموقع وحساب المواقيت ✓",
+                          style:
+                              const TextStyle(fontFamily: "cairo"))));
+                }
+                // عند الفشل يعرض fetchAndSaveLocation سبباً محدداً — لا نعيد الجدولة
                 setState(() {});
               }, child: const Text("تحديث")),
             ),
@@ -134,17 +148,29 @@ class _PrayerSettingsPageState extends State<PrayerSettingsPage> {
           Row(
             children: [
               Expanded(child: ElevatedButton.icon(onPressed: () async {
-                if (await Permission.notification.request().isGranted) {
+                if (await PrayerService.ensureAzanPermissions()) {
                   await PrayerService.scheduleAllPrayers();
-                  if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("تم جدولة الأذان لـ 7 أيام")));
+                  if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("تم جدولة الأذان كاملاً لـ 7 أيام")));
+                } else if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("يرجى السماح بالإشعارات ليعمل الأذان")));
                 }
               }, icon: const Icon(Icons.notifications_active), label: const Text("تفعيل الأذان", style: TextStyle(fontFamily: "cairo")))),
               SizedBox(width: 12.w),
               Expanded(child: OutlinedButton.icon(onPressed: () async {
                 await PrayerService.testNextPrayer();
-              }, icon: const Icon(Icons.play_arrow), label: const Text("اختبار", style: TextStyle(fontFamily: "cairo")))),
+                if (!mounted) return;
+                final nextName = PrayerService.getNextPrayer()['name'] ?? '';
+                Navigator.push(context, MaterialPageRoute(builder: (_) => AzanAlertPage(
+                  englishName: nextName.isEmpty ? 'Fajr' : nextName,
+                  arabicName: PrayerService.getArabicName(nextName.isEmpty ? 'Fajr' : nextName),
+                )));
+              }, icon: const Icon(Icons.play_arrow), label: const Text("اختبار كامل", style: TextStyle(fontFamily: "cairo")))),
             ],
           ),
+          SizedBox(height: 12.h),
+          OutlinedButton.icon(onPressed: () async {
+            await PrayerService.stopCurrentAzan();
+          }, icon: const Icon(Icons.stop), label: const Text("إيقاف الصوت الحالي", style: TextStyle(fontFamily: "cairo"))),
           SizedBox(height: 12.h),
           OutlinedButton.icon(onPressed: () async {
             await PrayerService.cancelAllPrayers();

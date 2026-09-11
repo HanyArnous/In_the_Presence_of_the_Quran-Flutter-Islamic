@@ -85,6 +85,42 @@ class AyahOptionsSheet extends StatefulWidget {
 class _AyahOptionsSheetState extends State<AyahOptionsSheet> {
   bool _isDownloading = false;
 
+  /// حدود آيات [surahNumber] داخل الصفحة [pageIndex] (pageNumber == index في هذا التدفق).
+  /// ترجع [startVerse, endVerse] أو null عند التعذر — لا ترمي أبداً.
+  List<int>? _pageBoundsForSurah(int surahNumber, int pageIndex) {
+    try {
+      final page = pageIndex.clamp(1, 604);
+      final data = quran.getPageData(page);
+      for (final e in data) {
+        try {
+          final s = (e["surah"] as num?)?.toInt();
+          if (s == surahNumber) {
+            final start = ((e["start"] as num?)?.toInt() ?? 1);
+            final end = ((e["end"] as num?)?.toInt() ?? start);
+            final total = quran.getVerseCount(surahNumber);
+            return [start.clamp(1, total), end.clamp(start, total)];
+          }
+        } catch (_) {}
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  /// يرسل وضع التكرار الحالي للـ Bloc ليُطبَّق فوراً على التشغيل الجاري.
+  void _dispatchRepeatMode() {
+    try {
+      final mode = getValue("quran_repeatMode")?.toString() ?? "continuous";
+      final count = ((getValue("quran_repeatCount") ?? 3) as num).toInt().clamp(1, 20);
+      final bounds = _pageBoundsForSurah(widget.surahNumber, widget.index);
+      qurapPagePlayerBloc.add(SetQuranRepeatMode(
+        mode: mode,
+        count: count,
+        pageStartVerse: bounds?[0],
+        pageEndVerse: bounds?[1],
+      ));
+    } catch (_) {}
+  }
+
   @override
   Widget build(BuildContext context) {
     if (reciters.isEmpty) addReciters();
@@ -389,8 +425,15 @@ class _AyahOptionsSheetState extends State<AyahOptionsSheet> {
                       if (qurapPagePlayerBloc.state is QuranPagePlayerPlaying) {
                         qurapPagePlayerBloc.add(KillPlayerEvent());
                       }
-                      qurapPagePlayerBloc.add(PlayFromVerse(widget.verseNumber,
-                          reciter.identifier, widget.surahNumber, suraNameEng));
+                      final bounds = _pageBoundsForSurah(
+                          widget.surahNumber, widget.index);
+                      qurapPagePlayerBloc.add(PlayFromVerse(
+                          widget.verseNumber,
+                          reciter.identifier,
+                          widget.surahNumber,
+                          suraNameEng,
+                          pageStartVerse: bounds?[0],
+                          pageEndVerse: bounds?[1]));
                     },
                     child: SizedBox(
                       width: MediaQuery.of(context).size.width,
@@ -585,22 +628,22 @@ class _AyahOptionsSheetState extends State<AyahOptionsSheet> {
                             ChoiceChip(
                               label: const Text("متابعة", style: TextStyle(fontFamily: "cairo", fontSize: 12)),
                               selected: (getValue("quran_repeatMode") ?? "continuous") == "continuous",
-                              onSelected: (_) { updateValue("quran_repeatMode", "continuous"); setState(() {}); },
+                              onSelected: (_) { updateValue("quran_repeatMode", "continuous"); setState(() {}); _dispatchRepeatMode(); },
                             ),
                             ChoiceChip(
                               label: const Text("آية", style: TextStyle(fontFamily: "cairo", fontSize: 12)),
                               selected: getValue("quran_repeatMode") == "ayah",
-                              onSelected: (_) { updateValue("quran_repeatMode", "ayah"); if ((getValue("quran_repeatCount") ?? 0) == 0) updateValue("quran_repeatCount", 3); setState(() {}); },
+                              onSelected: (_) { updateValue("quran_repeatMode", "ayah"); if ((getValue("quran_repeatCount") ?? 0) == 0) updateValue("quran_repeatCount", 3); setState(() {}); _dispatchRepeatMode(); },
                             ),
                             ChoiceChip(
                               label: const Text("صفحة", style: TextStyle(fontFamily: "cairo", fontSize: 12)),
                               selected: getValue("quran_repeatMode") == "page",
-                              onSelected: (_) { updateValue("quran_repeatMode", "page"); if ((getValue("quran_repeatCount") ?? 0) == 0) updateValue("quran_repeatCount", 3); setState(() {}); },
+                              onSelected: (_) { updateValue("quran_repeatMode", "page"); if ((getValue("quran_repeatCount") ?? 0) == 0) updateValue("quran_repeatCount", 3); setState(() {}); _dispatchRepeatMode(); },
                             ),
                             ChoiceChip(
                               label: const Text("مرة واحدة", style: TextStyle(fontFamily: "cairo", fontSize: 12)),
                               selected: getValue("quran_repeatMode") == "none",
-                              onSelected: (_) { updateValue("quran_repeatMode", "none"); setState(() {}); },
+                              onSelected: (_) { updateValue("quran_repeatMode", "none"); setState(() {}); _dispatchRepeatMode(); },
                             ),
                           ],
                         ),
@@ -617,7 +660,7 @@ class _AyahOptionsSheetState extends State<AyahOptionsSheet> {
                                     max: 20,
                                     divisions: 19,
                                     label: "${getValue("quran_repeatCount") ?? 3}",
-                                    onChanged: (v) { updateValue("quran_repeatCount", v.toInt()); setState(() {}); },
+                                    onChanged: (v) { updateValue("quran_repeatCount", v.toInt()); setState(() {}); _dispatchRepeatMode(); },
                                   ),
                                 ),
                                 Container(

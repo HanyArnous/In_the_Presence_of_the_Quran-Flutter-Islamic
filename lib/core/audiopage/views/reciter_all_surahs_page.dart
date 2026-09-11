@@ -37,6 +37,28 @@ class _RecitersSurahListPageState extends State<RecitersSurahListPage> {
   // List<String> get surahNumbers => widget.mushaf.surahList.split(',');
   late List surahs;
 
+  // سكرول قائمة السور: نعيده للأعلى عند الدخول وتغيّر الفلتر/البحث
+  final ScrollController _surahScrollController = ScrollController();
+
+  void _scrollSurahsToTop() {
+    try {
+      if (_surahScrollController.hasClients) {
+        _surahScrollController.jumpTo(0);
+      }
+    } catch (_) {}
+  }
+
+  @override
+  void dispose() {
+    try {
+      _surahScrollController.dispose();
+    } catch (_) {}
+    try {
+      textEditingController.dispose();
+    } catch (_) {}
+    super.dispose();
+  }
+
   Future<bool?> _showClosePlayerDialog(BuildContext context) {
     return showDialog<bool>(
       context: context,
@@ -122,6 +144,7 @@ class _RecitersSurahListPageState extends State<RecitersSurahListPage> {
       }
     }
     setState(() {});
+    _scrollSurahsToTop();
     // print(surahs.length);
     // surahs = surahs.where((element) {
     //   // print(element);
@@ -151,6 +174,7 @@ class _RecitersSurahListPageState extends State<RecitersSurahListPage> {
       }
     }
     setState(() {});
+    _scrollSurahsToTop();
     // print(surahs.length);
     // surahs = surahs.where((element) {
     //   // print(element);
@@ -200,6 +224,7 @@ class _RecitersSurahListPageState extends State<RecitersSurahListPage> {
               (element) => quran.normalise(element["suraName"]).contains(value))
           .toList();
     });
+    _scrollSurahsToTop();
   }
 
   // String photoUrl = "";
@@ -214,6 +239,8 @@ class _RecitersSurahListPageState extends State<RecitersSurahListPage> {
     }
     super.initState();
     storePhotoUrl();
+    // اضمن بدء القائمة من أولها عند كل دخول
+    WidgetsBinding.instance.addPostFrameCallback((_) => _scrollSurahsToTop());
   }
 
   List favoriteSurahList = [];
@@ -231,7 +258,9 @@ class _RecitersSurahListPageState extends State<RecitersSurahListPage> {
     return Stack(
       children: [
         Scaffold(
-          extendBodyBehindAppBar: true,
+          // false عمداً: مع true كان أول القائمة (الفاتحة) مختبئاً خلف
+          // شريط البحث فيجبر المستخدم على السكرول لرؤيتها
+          extendBodyBehindAppBar: false,
           backgroundColor:
               getValue("darkMode") ? quranPagesColorDark : quranPagesColorLight,
           appBar: AppBar(
@@ -346,6 +375,7 @@ class _RecitersSurahListPageState extends State<RecitersSurahListPage> {
                                                 // await Future.delayed(
                                                 //      Duration(milliseconds: 200));
                                                 Navigator.pop(context);
+                                                _scrollSurahsToTop();
 
                                                 // print(favoriteRecitersList.length);
 
@@ -604,6 +634,9 @@ class _RecitersSurahListPageState extends State<RecitersSurahListPage> {
           ),
           body: Container(
             child: ListView.separated(
+              controller: _surahScrollController,
+              keyboardDismissBehavior:
+                  ScrollViewKeyboardDismissBehavior.onDrag,
               padding: EdgeInsets.only(bottom: MediaQuery.of(context).padding.bottom + 16.h),
               physics: const BouncingScrollPhysics(),
               separatorBuilder: (context, index) => const Divider(),

@@ -11,6 +11,7 @@ import 'package:nabd/core/home.dart';
 import 'package:nabd/audio/audio_background_init.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:nabd/core/audiopage/player/player_bar.dart';
+import 'package:nabd/core/prayer/prayer_service.dart';
 import 'package:workmanager/workmanager.dart';
 import 'package:nabd/GlobalHelpers/messaging_helper.dart';
 
@@ -31,7 +32,11 @@ void main() async {
 
   // 4. تهيئة Hive (لا تعتمد على Activity)
   await initializeHive();
-  // 5. تهيئة مهام الخلفية لعرض الإشعارات للجميع
+  // 5. تهيئة إشعارات الأذان (قنوات + صلاحيات الاستقبال) قبل أي جدولة
+  try {
+    await PrayerService.initNotifications();
+  } catch (_) {}
+  // 6. تهيئة مهام الخلفية لعرض الإشعارات للجميع
   Workmanager().initialize(callbackDispatcher, isInDebugMode: false);
 
   Bloc.observer = SimpleBlocObserver();
@@ -60,6 +65,10 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // بعد أول إطار: افتح شاشة الأذان لو رنّ أثناء الإغلاق + أعد الجدولة بعد reboot
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      PrayerService.handleColdStart();
+    });
     return ScreenUtilInit(
       designSize: const Size(392.7, 800.7),
       minTextAdapt: true,
@@ -74,6 +83,7 @@ class MyApp extends StatelessWidget {
               return MaterialApp(
                 debugShowCheckedModeBanner: false,
                 title: 'في رحاب الرحمن',
+                navigatorKey: PrayerService.navigatorKey,
                 localizationsDelegates: context.localizationDelegates,
                 supportedLocales: context.supportedLocales,
                 locale: context.locale,

@@ -40,36 +40,99 @@ class KhatmaService {
     };
     updateValue("khatma_goal", map);
     updateValue("khatma_pages_read", <int>[]);
+    try {
+      updateValue("khatma_pages_dates", <String, String>{});
+    } catch (_) {}
     updateValue("khatma_lastStreakDate", null);
   }
 
   static void deleteGoal() {
     updateValue("khatma_goal", null);
     updateValue("khatma_pages_read", <int>[]);
+    try {
+      updateValue("khatma_pages_dates", <String, String>{});
+    } catch (_) {}
   }
 
+  /// المصدر الوحيد المعتمد لتسجيل صفحة في الختمة: زر التأكيد فقط.
+  /// يرجع: 'added' | 'exists' | 'noGoal' | 'outOfRange'
+  static String confirmPage(int page) {
+    final goal = getActiveGoal();
+    if (goal == null) return 'noGoal';
+    final startPage = (goal['startPage'] as int?) ?? 1;
+    if (page < startPage) return 'outOfRange';
+    final raw = getValue("khatma_pages_read");
+    final Set<int> set = raw is List
+        ? raw
+            .map((e) => int.tryParse(e.toString()) ?? -1)
+            .where((e) => e >= startPage)
+            .toSet()
+        : <int>{};
+    if (set.contains(page)) return 'exists';
+    set.add(page);
+    updateValue("khatma_pages_read", set.toList());
+    // تاريخ التأكيد لكل صفحة — يفصل الختمة عن إحصائيات التصفح التلقائية
+    try {
+      final datesRaw = getValue("khatma_pages_dates");
+      final Map<String, String> dates = datesRaw is Map
+          ? Map<String, String>.from(
+              datesRaw.map((k, v) => MapEntry(k.toString(), v.toString())))
+          : <String, String>{};
+      dates[page.toString()] = _dateKey(DateTime.now());
+      updateValue("khatma_pages_dates", dates);
+    } catch (_) {}
+    // أثر إحصائي: ضغطة التأكيد قراءة فعلية — تُبقي الإحصائيات متسقة
+    try {
+      final dateKey = _dateKey(DateTime.now());
+      final List<dynamic> existing =
+          List<dynamic>.from(getValue("$dateKey-quran_reading-pages") ?? []);
+      final pagesSet = existing
+          .map((e) => int.tryParse(e.toString()) ?? -1)
+          .where((e) => e > 0)
+          .toSet();
+      if (!pagesSet.contains(page)) {
+        pagesSet.add(page);
+        updateValue("$dateKey-quran_reading-pages", pagesSet.toList());
+        updateValue("$dateKey-quran_reading-count", pagesSet.length);
+        final total = getValue("quran_reading-totalCount") ?? 0;
+        updateValue("quran_reading-totalCount", (total as num) + 1);
+      }
+    } catch (_) {}
+    return 'added';
+  }
+
+  /// مقروء اليوم من تأكيدات الختمة فقط (لا تصفح تلقائي).
   static int getTodayRead() {
-    final key = _dateKey(DateTime.now());
-    return int.tryParse(getValue("$key-quran_reading-count")?.toString() ?? "0") ?? 0;
+    final goal = getActiveGoal();
+    if (goal == null) return 0;
+    final startPage = (goal['startPage'] as int?) ?? 1;
+    final today = _dateKey(DateTime.now());
+    try {
+      final datesRaw = getValue("khatma_pages_dates");
+      if (datesRaw is Map) {
+        int n = 0;
+        datesRaw.forEach((k, v) {
+          final p = int.tryParse(k.toString()) ?? -1;
+          if (p >= startPage && v.toString() == today) n++;
+        });
+        return n;
+      }
+    } catch (_) {}
+    return 0;
   }
 
   static int getProgressPages() {
     final goal = getActiveGoal();
     if (goal == null) return 0;
-    // أولوية للصفحات المسجلة فعلياً (أدق من lastRead)
+    // فقط الصفحات المؤكدة بزر "تأكيد الانتهاء" — لا نستنتج من التصفح (lastRead)
+    // حتى لا تُحتسب صفحات لم يضغطها المستخدم كمقروءة.
     final khatmaPages = getValue("khatma_pages_read");
-    if (khatmaPages is List && khatmaPages.isNotEmpty) {
+    if (khatmaPages is List) {
       final startPage = (goal['startPage'] as int?) ?? 1;
       final set = khatmaPages.map((e) => int.tryParse(e.toString()) ?? -1).where((e) => e >= startPage).toSet();
       return set.length;
     }
-    final startPage = (goal['startPage'] as int?) ?? 1;
-    final lastRead = getValue("lastRead");
-    int currentPage = 0;
-    if (lastRead is int) currentPage = lastRead;
-    if (lastRead is String) currentPage = int.tryParse(lastRead) ?? 0;
-    if (currentPage < startPage) return 0;
-    return (currentPage - startPage + 1).clamp(0, totalPages);
+    return 0;
   }
 
   static double getProgressPercent() {
@@ -110,23 +173,28 @@ class KhatmaService {
     return "$y-$m-$day";
   }
 
+  /// سلسلة الأيام المتتالية ذات تأكيد ختمة واحد على الأقل (لا تصفح).
   static int getStreak() {
+    final Set<String> days = {};
+    try {
+      final datesRaw = getValue("khatma_pages_dates");
+      if (datesRaw is Map) {
+        for (final v in datesRaw.values) {
+          days.add(v.toString());
+        }
+      }
+    } catch (_) {}
+    if (days.isEmpty) return 0;
     int streak = 0;
     DateTime d = DateTime.now();
-    while (true) {
-      final key = _dateKey(d);
-      final cnt = int.tryParse(getValue("$key-quran_reading-count")?.toString() ?? "0") ?? 0;
-      if (cnt > 0) {
-        streak++;
-        d = d.subtract(const Duration(days: 1));
-        if (streak > 365) break;
-      } else {
-        if (streak == 0 && d.day == DateTime.now().day) {
-          d = d.subtract(const Duration(days: 1));
-          continue;
-        }
-        break;
-      }
+    // إن لم يؤكد اليوم بعد، ابدأ من أمس دون كسر السلسلة
+    if (!days.contains(_dateKey(d))) {
+      d = d.subtract(const Duration(days: 1));
+    }
+    while (days.contains(_dateKey(d))) {
+      streak++;
+      if (streak > 365) break;
+      d = d.subtract(const Duration(days: 1));
     }
     return streak;
   }
@@ -179,11 +247,21 @@ class KhatmaService {
     return result;
   }
 
+  /// صفحات الختمة المؤكدة بتاريخ معين (لا تصفح تلقائي).
   static List<int> getPagesForDate(String dateKey) {
-    final raw = getValue("$dateKey-quran_reading-pages");
-    if (raw is List) {
-      return raw.map((e) => int.tryParse(e.toString()) ?? -1).where((e) => e > 0).toList()..sort();
-    }
-    return [];
+    final List<int> out = [];
+    try {
+      final datesRaw = getValue("khatma_pages_dates");
+      if (datesRaw is Map) {
+        datesRaw.forEach((k, v) {
+          if (v.toString() == dateKey) {
+            final p = int.tryParse(k.toString()) ?? -1;
+            if (p > 0) out.add(p);
+          }
+        });
+      }
+    } catch (_) {}
+    out.sort();
+    return out;
   }
 }

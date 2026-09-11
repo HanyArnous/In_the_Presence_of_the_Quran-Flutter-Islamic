@@ -26,6 +26,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:nabd/blocs/bloc/quran_page_player_bloc.dart';
 import 'package:nabd/core/home.dart';
+import 'package:nabd/core/khatma/khatma_service.dart';
 import 'package:quran/quran.dart' as quran;
 
 class QuranReadingPage extends StatefulWidget {
@@ -736,45 +737,49 @@ class QuranDetailsPageState extends State<QuranDetailsPage> {
           }),
         bottomNavigationBar: widget.fromKhatma
             ? SafeArea(
-                child: Padding(
-                  padding: EdgeInsets.all(12.w),
-                  child: ElevatedButton.icon(
-                    onPressed: () {
-                      final currentPage = index;
-                      final today = DateTime.now();
-                      final dateKey = "${today.year.toString().padLeft(4,'0')}-${today.month.toString().padLeft(2,'0')}-${today.day.toString().padLeft(2,'0')}";
-                      List<dynamic> existing = getValue("$dateKey-quran_reading-pages") ?? [];
-                      Set<int> pagesSet = existing.map((e) => int.tryParse(e.toString()) ?? -1).where((e) => e > 0).toSet();
-                      bool isNew = !pagesSet.contains(currentPage);
-                      if (isNew) {
-                        pagesSet.add(currentPage);
-                        updateValue("$dateKey-quran_reading-pages", pagesSet.toList());
-                        updateValue("$dateKey-quran_reading-count", pagesSet.length);
-                        final total = getValue("quran_reading-totalCount") ?? 0;
-                        updateValue("quran_reading-totalCount", (total as num) + 1);
-                      }
-                      final goal = getValue("khatma_goal");
-                      if (goal is Map) {
-                        int startPage = (goal['startPage'] as int?) ?? 1;
-                        if (currentPage >= startPage) {
-                          List<dynamic> khatmaPages = getValue("khatma_pages_read") ?? [];
-                          Set<int> khatmaSet = khatmaPages.map((e) => int.tryParse(e.toString()) ?? -1).where((e) => e >= startPage).toSet();
-                          bool isNewKhatma = !khatmaSet.contains(currentPage);
-                          if (isNewKhatma) {
-                            khatmaSet.add(currentPage);
-                            updateValue("khatma_pages_read", khatmaSet.toList());
+                child: OrientationBuilder(
+                  builder: (context, orientation) {
+                    final isLandscape =
+                        orientation == Orientation.landscape;
+                    // أفقي: شريط مدمج صغير حتى لا يغطي الآيات (الشاشة قصيرة)
+                    return Padding(
+                      padding: EdgeInsets.symmetric(
+                          horizontal: isLandscape ? 16.w : 12.w,
+                          vertical: isLandscape ? 4.h : 12.w),
+                      child: ElevatedButton.icon(
+                        onPressed: () {
+                          final currentPage = index;
+                          final result =
+                              KhatmaService.confirmPage(currentPage);
+                          if (result == 'added') {
                             ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("تم تأكيد قراءة صفحة $currentPage للختمة ✓", style: const TextStyle(fontFamily: "cairo")), backgroundColor: const Color(0xff6B8E4E)));
-                          } else {
+                          } else if (result == 'exists') {
                             ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("صفحة $currentPage مسجلة مسبقاً", style: const TextStyle(fontFamily: "cairo"))));
+                          } else if (result == 'outOfRange') {
+                            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("هذه الصفحة قبل بداية هدف الختمة", style: TextStyle(fontFamily: "cairo"))));
                           }
-                        }
-                      }
-                      HapticFeedback.mediumImpact();
-                    },
-                    icon: const Icon(Icons.check_circle, color: Colors.white),
-                    label: const Text("تأكيد الانتهاء من هذه الصفحة للختمة", style: TextStyle(fontFamily: "cairo", fontWeight: FontWeight.bold)),
-                    style: ElevatedButton.styleFrom(backgroundColor: const Color(0xff6B8E4E), foregroundColor: Colors.white, minimumSize: Size(double.infinity, 48.h), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.r))),
-                  ),
+                          HapticFeedback.mediumImpact();
+                        },
+                        icon: Icon(Icons.check_circle,
+                            color: Colors.white,
+                            size: isLandscape ? 18.sp : 24.sp),
+                        label: Text("تأكيد الانتهاء من هذه الصفحة للختمة",
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                                fontFamily: "cairo",
+                                fontWeight: FontWeight.bold,
+                                fontSize: isLandscape ? 12.sp : 14.sp)),
+                        style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xff6B8E4E),
+                            foregroundColor: Colors.white,
+                            minimumSize: Size(
+                                double.infinity, isLandscape ? 38.h : 48.h),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12.r))),
+                      ),
+                    );
+                  },
                 ),
               )
             : null,

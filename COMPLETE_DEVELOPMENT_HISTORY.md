@@ -505,7 +505,7 @@ Statistics Page ← Unified Key Retrieval ← Data Display
 
 ### **Developer Contact**
 - **GitHub**: https://github.com/HanyArnous
-- **Email**: hany.arnous@gmail.com
+- **Email**: hany.hossam.arnous@gmail.com
 - **Issues**: Report via GitHub Issues
 - **Discussions**: GitHub Discussions
 

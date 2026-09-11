@@ -376,9 +376,12 @@ class _PlayerBarState extends State<PlayerBar> with AutomaticKeepAliveClientMixi
                                                     true) {
                                                   return const SizedBox();
                                                 }
-                                                final metadata = statee!
-                                                    .currentSource!
-                                                    .tag as MediaItem;
+                                                final current = statee?.currentSource;
+                                                if (current == null) {
+                                                  return const SizedBox();
+                                                }
+                                                final metadata =
+                                                    current.tag as MediaItem;
                                                 if (snapshot.hasData) {
                                                   // استخراج اسم القارئ من metadata الديناميكي
                                                   String currentReciterName = state.reciter.name;
@@ -568,9 +571,13 @@ class _PlayerBarState extends State<PlayerBar> with AutomaticKeepAliveClientMixi
                                                       true) {
                                                     return const SizedBox();
                                                   }
-                                                  final metadata = statee!
-                                                      .currentSource!
-                                                      .tag as MediaItem;
+                                                  final current =
+                                                      statee?.currentSource;
+                                                  if (current == null) {
+                                                    return const SizedBox();
+                                                  }
+                                                  final metadata =
+                                                      current.tag as MediaItem;
                                                   return Column(
                                                     crossAxisAlignment:
                                                         CrossAxisAlignment
@@ -587,7 +594,7 @@ class _PlayerBarState extends State<PlayerBar> with AutomaticKeepAliveClientMixi
                                                       Text(
                                                         textDirection:
                                                             m.TextDirection.rtl,
-                                                        metadata.album!
+                                                        (metadata.album ?? "")
                                                             .replaceAll(
                                                                 "القارئ", ""),
                                                         style: TextStyle(
@@ -633,9 +640,9 @@ class _PlayerBarState extends State<PlayerBar> with AutomaticKeepAliveClientMixi
                                                                     child: Center(
                                                                         child: CircleAvatar(
                                                                             radius: isPlaylistShown == false ? 130.r : 60.r,
-                                                                            foregroundImage: getValue("${metadata.album!.replaceAll("القارئ ", "")} photo url") != null
+                                                                            foregroundImage: ((metadata.album ?? "").replaceAll("القارئ ", "").isNotEmpty && getValue("${(metadata.album ?? "").replaceAll("القارئ ", "")} photo url") != null)
                                                                                 ? CachedNetworkImageProvider(
-                                                                                    getValue("${metadata.album!.replaceAll("القارئ ", "")} photo url"),
+                                                                                    getValue("${(metadata.album ?? "").replaceAll("القارئ ", "")} photo url"),
                                                                                   )
                                                                                 : null,
                                                                             backgroundImage: CachedNetworkImageProvider(
@@ -667,16 +674,20 @@ class _PlayerBarState extends State<PlayerBar> with AutomaticKeepAliveClientMixi
                                             // if (isPlaylistShown == false)
                                             SizedBox(height: 30.0.h),
                                             // if (isPlaylistShown == true)
-                                            StreamBuilder<Duration>(
-                                              stream: state
-                                                  .audioPlayer.positionStream,
-                                              builder: (context, snapshot) {
-                                                final positionData =
-                                                    snapshot.data;
-                                                if (snapshot.hasError) {
-                                                  return Container();
-                                                }
-                                                if (snapshot.hasData == false) {
+                                            // شريط التقدم: يستمع للمدة أولاً (قد تكون null أثناء
+                                            // التحميل/الانتقال بين السور) ثم للموضع — يمنع كراش "!" وتجمد السلايدر.
+                                            StreamBuilder<Duration?>(
+                                              stream: state.audioPlayer
+                                                  .durationStream,
+                                              builder: (context,
+                                                  durationSnapshot) {
+                                                final duration =
+                                                    durationSnapshot.data ??
+                                                        state.audioPlayer
+                                                            .duration;
+                                                if (duration == null ||
+                                                    duration.inMilliseconds <=
+                                                        0) {
                                                   return Container(
                                                     child: const Center(
                                                       child:
@@ -684,87 +695,102 @@ class _PlayerBarState extends State<PlayerBar> with AutomaticKeepAliveClientMixi
                                                     ),
                                                   );
                                                 }
-                                                return Row(
-                                                  children: [
-                                                    SizedBox(
-                                                      width: 30.w,
-                                                    ),
-                                                    SizedBox(
-                                                        child: Text(
-                                                            textDirection: m
-                                                                .TextDirection
-                                                                .rtl,
-                                                            formatDuration(
-                                                                snapshot.data!),
-                                                            style: const TextStyle(
-                                                                color: Colors
-                                                                    .white))),
-                                                    Expanded(
-                                                      child: SliderTheme(
-                                                        data: SliderTheme.of(
-                                                                context)
-                                                            .copyWith(
-                                                          activeTrackColor:
-                                                              const Color
-                                                                  .fromARGB(
-                                                                  255,
-                                                                  255,
-                                                                  255,
-                                                                  255), // Customize track color
-                                                          inactiveTrackColor: Colors
-                                                              .grey, // Customize inactive track color
-                                                          thumbColor: Colors
-                                                              .white, // Customize thumb color
-                                                          overlayColor: Colors
-                                                              .blue
-                                                              .withAlpha(
-                                                                  50), // Customize overlay color
-                                                          thumbShape:
-                                                              const RoundSliderThumbShape(
-                                                                  enabledThumbRadius:
-                                                                      10),
-                                                          overlayShape:
-                                                              const RoundSliderOverlayShape(
-                                                                  overlayRadius:
-                                                                      20),
+                                                final maxMs = duration
+                                                    .inMilliseconds
+                                                    .toDouble();
+                                                return StreamBuilder<Duration>(
+                                                  stream: state.audioPlayer
+                                                      .positionStream,
+                                                  builder:
+                                                      (context, snapshot) {
+                                                    if (snapshot.hasError) {
+                                                      return Container();
+                                                    }
+                                                    final position =
+                                                        snapshot.data ??
+                                                            Duration.zero;
+                                                    final valueMs = position
+                                                        .inMilliseconds
+                                                        .toDouble()
+                                                        .clamp(0.0, maxMs);
+                                                    return Row(
+                                                      children: [
+                                                        SizedBox(
+                                                          width: 30.w,
                                                         ),
-                                                        child: Slider(
-                                                          value: snapshot
-                                                              .data!.inSeconds
-                                                              .toDouble(),
-                                                          min: 0,
-                                                          max: state
-                                                              .audioPlayer
-                                                              .duration!
-                                                              .inSeconds
-                                                              .toDouble(),
-                                                          onChanged: (value) {
-                                                            // Handle slider value change here
-                                                            // Convert the double to an integer for seconds
-                                                            int newSeconds =
-                                                                value.toInt();
-                                                            state.audioPlayer
-                                                                .seek(Duration(
-                                                                    seconds:
-                                                                        newSeconds));
-                                                          },
+                                                        SizedBox(
+                                                            child: Text(
+                                                                textDirection: m
+                                                                    .TextDirection
+                                                                    .rtl,
+                                                                formatDuration(
+                                                                    position),
+                                                                style: const TextStyle(
+                                                                    color: Colors
+                                                                        .white))),
+                                                        Expanded(
+                                                          child: SliderTheme(
+                                                            data: SliderTheme.of(
+                                                                    context)
+                                                                .copyWith(
+                                                              activeTrackColor:
+                                                                  const Color
+                                                                      .fromARGB(
+                                                                      255,
+                                                                      255,
+                                                                      255,
+                                                                      255), // Customize track color
+                                                              inactiveTrackColor: Colors
+                                                                  .grey, // Customize inactive track color
+                                                              thumbColor: Colors
+                                                                  .white, // Customize thumb color
+                                                              overlayColor: Colors
+                                                                  .blue
+                                                                  .withAlpha(
+                                                                      50), // Customize overlay color
+                                                              thumbShape:
+                                                                  const RoundSliderThumbShape(
+                                                                      enabledThumbRadius:
+                                                                          10),
+                                                              overlayShape:
+                                                                  const RoundSliderOverlayShape(
+                                                                      overlayRadius:
+                                                                          20),
+                                                            ),
+                                                            child: Slider(
+                                                              value: valueMs,
+                                                              min: 0,
+                                                              max: maxMs,
+                                                              onChanged:
+                                                                  (value) {
+                                                                // Handle slider value change here
+                                                                state
+                                                                    .audioPlayer
+                                                                    .seek(Duration(
+                                                                        milliseconds:
+                                                                            value.toInt()));
+                                                              },
+                                                            ),
+                                                          ),
                                                         ),
-                                                      ),
-                                                    ),
-                                                    SizedBox(
-                                                        child: Text(
-                                                      formatDuration(state
-                                                          .audioPlayer
-                                                          .duration!),
-                                                      textDirection:
-                                                          m.TextDirection.rtl,
-                                                      style: const TextStyle(
-                                                          color: Colors.white),
-                                                    )),
-                                                    SizedBox(
-                                                      width: 30.w,
-                                                    )
-                                                  ],
+                                                        SizedBox(
+                                                            child: Text(
+                                                          formatDuration(
+                                                              duration),
+                                                          textDirection: m
+                                                              .TextDirection
+                                                              .rtl,
+                                                          style:
+                                                              const TextStyle(
+                                                                  color: Colors
+                                                                      .white),
+                                                        )),
+                                                        SizedBox(
+                                                          width: 30.w,
+                                                        )
+                                                      ],
+                                                    );
+                                                  },
                                                 );
                                               },
                                             ),
@@ -817,9 +843,19 @@ class _PlayerBarState extends State<PlayerBar> with AutomaticKeepAliveClientMixi
                                                       onPressed: () {
                                                         //               "${event.moshaf.server}/${e.toString().padLeft(3, "0")}.mp3"
                                                         // .replace(scheme: 'http');
+                                                        final idx = state
+                                                            .audioPlayer
+                                                            .currentIndex;
+                                                        if (idx == null ||
+                                                            idx < 0 ||
+                                                            idx >=
+                                                                state.surahNumbers
+                                                                    .length) {
+                                                          return;
+                                                        }
 
                                                         if (File(
-                                                                "${appDir.path}${state.reciter.name}-${state.moshaf.id}-${getSurahNameArabic(int.parse(state.surahNumbers[state.audioPlayer.currentIndex!]))}.mp3")
+                                                                "${appDir.path}${state.reciter.name}-${state.moshaf.id}-${getSurahNameArabic(int.parse(state.surahNumbers[idx]))}.mp3")
                                                             .existsSync()) {
                                                         } else {
                                                           playerPageBloc.add(DownloadSurah(
@@ -829,20 +865,32 @@ class _PlayerBarState extends State<PlayerBar> with AutomaticKeepAliveClientMixi
                                                                   state.moshaf,
                                                               suraNumber: state
                                                                       .surahNumbers[
-                                                                  state
-                                                                      .audioPlayer
-                                                                      .currentIndex!],
+                                                                  idx],
                                                               url:
-                                                                  "${state.moshaf.server}/${state.surahNumbers[state.audioPlayer.currentIndex!].padLeft(3, "0")}.mp3"));
+                                                                  "${state.moshaf.server}/${state.surahNumbers[idx].padLeft(3, "0")}.mp3"));
                                                         } // .replace(scheme: 'http')));
                                                       },
-                                                      icon: Icon(
-                                                          File("${appDir.path}${state.reciter.name}-${state.moshaf.id}-${getSurahNameArabic(int.parse(state.surahNumbers[state.audioPlayer.currentIndex!]))}.mp3")
-                                                                  .existsSync()
-                                                              ? Icons
-                                                                  .download_done
-                                                              : Icons.download,
-                                                          size: 24.sp),
+                                                      icon: Builder(builder:
+                                                          (context) {
+                                                        final idx = state
+                                                            .audioPlayer
+                                                            .currentIndex;
+                                                        final downloaded = idx !=
+                                                                    null &&
+                                                                idx >= 0 &&
+                                                                idx <
+                                                                    state
+                                                                        .surahNumbers
+                                                                        .length &&
+                                                                File("${appDir.path}${state.reciter.name}-${state.moshaf.id}-${getSurahNameArabic(int.parse(state.surahNumbers[idx]))}.mp3")
+                                                                    .existsSync();
+                                                        return Icon(
+                                                            downloaded
+                                                                ? Icons
+                                                                    .download_done
+                                                                : Icons.download,
+                                                            size: 24.sp);
+                                                      }),
                                                       color: Colors.white,
                                                     ),
                                                   ],
@@ -1020,8 +1068,9 @@ class _PlayerBarState extends State<PlayerBar> with AutomaticKeepAliveClientMixi
                                                               },
                                                               child: Material(
                                                                 color: i ==
-                                                                        sequenceState!
-                                                                            .currentIndex
+                                                                        (sequenceState
+                                                                                ?.currentIndex ??
+                                                                            -1)
                                                                     ? const m
                                                                         .Color.fromARGB(
                                                                         255,
@@ -1108,32 +1157,72 @@ class _PlayerBarState extends State<PlayerBar> with AutomaticKeepAliveClientMixi
                                                               MainAxisAlignment
                                                                   .center,
                                                           children: [
-                                                            Text(
-                                                              "${state.audioPlayer.currentIndex! + 1}/${state.audioPlayer.sequence.length}",
-                                                              textDirection: m
-                                                                  .TextDirection
-                                                                  .rtl,
-                                                              style: TextStyle(
-                                                                  color: Colors
-                                                                      .white,
-                                                                  fontSize:
-                                                                      16.sp),
-                                                            ),
+                                                            Builder(builder:
+                                                                (context) {
+                                                              final idx = state
+                                                                  .audioPlayer
+                                                                  .currentIndex;
+                                                              final total = state
+                                                                  .audioPlayer
+                                                                  .sequence
+                                                                  .length;
+                                                              return Text(
+                                                                idx == null
+                                                                    ? "0/$total"
+                                                                    : "${idx + 1}/$total",
+                                                                textDirection: m
+                                                                    .TextDirection
+                                                                    .rtl,
+                                                                style: TextStyle(
+                                                                    color: Colors
+                                                                        .white,
+                                                                    fontSize:
+                                                                        16.sp),
+                                                              );
+                                                            }),
                                                           ],
                                                         ),
                                                         SizedBox(
-                                                          width: 200.w,
+                                                          width: 10.w,
                                                         ),
-                                                        Text(
-                                                          "${state.audioPlayer.sequence[state.audioPlayer.currentIndex!].tag.title}",
-                                                          textDirection: m
-                                                              .TextDirection
-                                                              .rtl,
-                                                          style: TextStyle(
-                                                              color:
-                                                                  Colors.white,
-                                                              fontSize: 18.sp),
-                                                        )
+                                                        const Spacer(),
+                                                        Expanded(
+                                                          flex: 3,
+                                                          child: Builder(builder: (context) {
+                                                          final idx = state
+                                                              .audioPlayer
+                                                              .currentIndex;
+                                                          final seq = state
+                                                              .audioPlayer
+                                                              .sequence;
+                                                          String title = "";
+                                                          if (idx != null &&
+                                                              idx >= 0 &&
+                                                              idx < seq.length) {
+                                                            try {
+                                                              title = (seq[idx]
+                                                                          .tag
+                                                                      as MediaItem)
+                                                                  .title;
+                                                            } catch (_) {}
+                                                          }
+                                                          return Text(
+                                                            title,
+                                                            textDirection: m
+                                                                .TextDirection
+                                                                .rtl,
+                                                            maxLines: 1,
+                                                            overflow:
+                                                                TextOverflow
+                                                                    .ellipsis,
+                                                            style: TextStyle(
+                                                                color: Colors
+                                                                    .white,
+                                                                fontSize:
+                                                                    18.sp),
+                                                          );
+                                                        }),
+                                                      ),
                                                       ],
                                                     ),
                                                   ),
@@ -1210,7 +1299,10 @@ class ControlButtons extends StatelessWidget {
             final positionData = snapshot.data;
             return IconButton(
               onPressed: () {
-                player.seek(Duration(seconds: positionData!.inSeconds - 10));
+                // رجوع 10 ثوانٍ بأمان (بدون كراش عند غياب الموضع، وبدون زمن سالب)
+                final pos = positionData ?? Duration.zero;
+                final target = pos - const Duration(seconds: 10);
+                player.seek(target.isNegative ? Duration.zero : target);
               },
               icon: Icon(
                 Icons.fast_rewind,
@@ -1313,7 +1405,12 @@ class ControlButtons extends StatelessWidget {
             final positionData = snapshot.data;
             return IconButton(
               onPressed: () {
-                player.seek(Duration(seconds: positionData!.inSeconds + 10));
+                // تقديم 10 ثوانٍ بأمان مع حد أقصى هو مدة المقطع إن عُرفت
+                final pos = positionData ?? Duration.zero;
+                var target = pos + const Duration(seconds: 10);
+                final dur = player.duration;
+                if (dur != null && target > dur) target = dur;
+                player.seek(target);
               },
               icon: Icon(
                 Icons.fast_forward,

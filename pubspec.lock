@@ -265,14 +265,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.0.4"
-  chewie:
-    dependency: "direct main"
-    description:
-      name: chewie
-      sha256: "44bcfc5f0dfd1de290c87c9d86a61308b3282a70b63435d5557cfd60f54a69ca"
-      url: "https://pub.dev"
-    source: hosted
-    version: "1.13.0"
   cli_util:
     dependency: transitive
     description:
@@ -643,14 +635,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.4.7"
-  flutter_overlay_window:
-    dependency: "direct main"
-    description:
-      name: flutter_overlay_window
-      sha256: "17988420249da68e421d1b44b511e6113d3de7a9e52c3fbd6d99730508af4580"
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.5.0"
   flutter_plugin_android_lifecycle:
     dependency: transitive
     description:
@@ -909,14 +893,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.0.5"
-  in_app_update:
-    dependency: "direct main"
-    description:
-      name: in_app_update
-      sha256: "9924a3efe592e1c0ec89dda3683b3cfec3d4cd02d908e6de00c24b759038ddb1"
-      url: "https://pub.dev"
-    source: hosted
-    version: "4.2.5"
   indexed_list_view:
     dependency: "direct main"
     description:
@@ -1316,14 +1292,6 @@ packages:
       relative: true
     source: path
     version: "1.2.2"
-  radio_player:
-    dependency: "direct main"
-    description:
-      name: radio_player
-      sha256: d8a5af5e7f174cfde62c3e908ca3bc5e48f8d9575d403d3f37dcd1aa18b24ce7
-      url: "https://pub.dev"
-    source: hosted
-    version: "2.2.1"
   rxdart:
     dependency: transitive
     description:
@@ -1585,14 +1553,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.7.7"
-  tiktoklikescroller:
-    dependency: "direct main"
-    description:
-      name: tiktoklikescroller
-      sha256: "75e323b067b5f771f6a79f7f0d43c429065c115232a73264bf11c0f54ca13c85"
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.2.8"
   timezone:
     dependency: "direct main"
     description:
@@ -1618,7 +1578,7 @@ packages:
     source: hosted
     version: "2.3.1"
   url_launcher:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: url_launcher
       sha256: f6a7e5c4835bb4e3026a04793a4199ca2d14c739ec378fdfe23fc8075d0439f8
@@ -1721,46 +1681,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.2.0"
-  video_player:
-    dependency: transitive
-    description:
-      name: video_player
-      sha256: "096bc28ce10d131be80dfb00c223024eb0fba301315a406728ab43dd99c45bdf"
-      url: "https://pub.dev"
-    source: hosted
-    version: "2.10.1"
-  video_player_android:
-    dependency: transitive
-    description:
-      name: video_player_android
-      sha256: ee4fd520b0cafa02e4a867a0f882092e727cdaa1a2d24762171e787f8a502b0a
-      url: "https://pub.dev"
-    source: hosted
-    version: "2.9.1"
-  video_player_avfoundation:
-    dependency: transitive
-    description:
-      name: video_player_avfoundation
-      sha256: "2a7aaf2f28212c285e0fb29b50728bbea513d743dd48d3024098015f169fb937"
-      url: "https://pub.dev"
-    source: hosted
-    version: "2.8.10"
-  video_player_platform_interface:
-    dependency: transitive
-    description:
-      name: video_player_platform_interface
-      sha256: "57c5d73173f76d801129d0531c2774052c5a7c11ccb962f1830630decd9f24ec"
-      url: "https://pub.dev"
-    source: hosted
-    version: "6.6.0"
-  video_player_web:
-    dependency: transitive
-    description:
-      name: video_player_web
-      sha256: "9f3c00be2ef9b76a95d94ac5119fb843dca6f2c69e6c9968f6f2b6c9e7afbdeb"
-      url: "https://pub.dev"
-    source: hosted
-    version: "2.4.0"
   visibility_detector:
     dependency: "direct main"
     description:

@@ -61,8 +61,6 @@ import 'package:after_layout/after_layout.dart';
 import 'package:workmanager/workmanager.dart';
 // import 'package:periodic_alarm/src/android_alarm.dart';
 import 'package:flutter/material.dart';
-import 'package:url_launcher/url_launcher.dart';
-import 'package:fluttericon/font_awesome_icons.dart';
 
 final qurapPagePlayerBloc = QuranPagePlayerBloc();
 final playerPageBloc = PlayerBlocBloc();
@@ -414,44 +412,61 @@ class _HomeState extends State<Home>
   late Stream<Duration> _timeLeftStream;
   downloadAndStoreHadithData() async {
     await Future.delayed(const Duration(seconds: 1));
-    final SharedPreferences prefs = await SharedPreferences.getInstance();
-    if (prefs.getString("hadithlist-100000-${context.locale.languageCode}") ==
-        null) {
-      Response response = await Dio().get(
-          "https://hadeethenc.com/api/v1/categories/roots/?language=${context.locale.languageCode}");
+    try {
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      final lang = context.locale.languageCode;
+      // المفتاح الموجود لا يُعتمد إلا إذا كان قائمة غير فارغة
+      try {
+        final existing = prefs.getString("hadithlist-100000-$lang");
+        if (existing != null) {
+          final list = json.decode(existing) as List<dynamic>;
+          if (list.isNotEmpty) return;
+        }
+        await prefs.remove("hadithlist-100000-$lang");
+      } catch (_) {
+        try {
+          await prefs.remove("hadithlist-100000-$lang");
+        } catch (_) {}
+      }
+      final dio = Dio(BaseOptions(
+        connectTimeout: const Duration(seconds: 15),
+        receiveTimeout: const Duration(seconds: 45),
+        sendTimeout: const Duration(seconds: 15),
+      ));
+      Response response = await dio.get(
+          "https://hadeethenc.com/api/v1/categories/roots/?language=$lang");
 
       if (response.data != null) {
         final jsonData = json.encode(response.data);
-        prefs.setString("categories-${context.locale.languageCode}", jsonData);
+        prefs.setString("categories-$lang", jsonData);
 
-        response.data.forEach((category) async {
-          Response response2 = await Dio().get(
-              "https://hadeethenc.com/api/v1/hadeeths/list/?language=${context.locale.languageCode}&category_id=${category["id"]}&per_page=699999");
+        // حلقة تسلسلية + كتابة التجميع مرة واحدة (بدل forEach(async) المتسابق)
+        final List<dynamic> aggregate = [];
+        for (var category in response.data) {
+          try {
+            Response response2 = await dio.get(
+                "https://hadeethenc.com/api/v1/hadeeths/list/?language=$lang&category_id=${category["id"]}&per_page=699999");
 
-          if (response2.data != null) {
-            final jsonData = json.encode(response2.data["data"]);
-            prefs.setString(
-                "hadithlist-${category["id"]}-${context.locale.languageCode}",
-                jsonData);
-
-            ///add to category of all hadithlist
-            if (prefs.getString(
-                    "hadithlist-100000-${context.locale.languageCode}") ==
-                null) {
-              prefs.setString(
-                  "hadithlist-100000-${context.locale.languageCode}", jsonData);
-            } else {
-              final dataOfOldHadithlist = json.decode(prefs.getString(
-                      "hadithlist-100000-${context.locale.languageCode}")!)
-                  as List<dynamic>;
-              dataOfOldHadithlist.addAll(json.decode(jsonData));
-              prefs.setString(
-                  "hadithlist-100000-${context.locale.languageCode}",
-                  json.encode(dataOfOldHadithlist));
+            if (response2.data != null) {
+              final items = response2.data["data"];
+              if (items is List && items.isNotEmpty) {
+                final categoryJson = json.encode(items);
+                prefs.setString(
+                    "hadithlist-${category["id"]}-$lang", categoryJson);
+                aggregate.addAll(items);
+              }
             }
+          } catch (_) {
+            // تابع باقي التصنيفات
           }
-        });
+        }
+        if (aggregate.isNotEmpty) {
+          await prefs.setString(
+              "hadithlist-100000-$lang", json.encode(aggregate));
+        }
       }
+    } catch (_) {
+      // تحميل خلفي صامت — واجهات العرض تجلب بنفسها عند الحاجة
     }
 
     //  if (response.data != null) {
@@ -1518,7 +1533,7 @@ class _HomeState extends State<Home>
                                                 SuperellipseButton(
                                                     text: "notifications".tr(),
                                                     onPressed: () async {
-                                                      // await FlutterOverlayWindow.requestPermission();
+                                                      // (بلاي ستور: لا نافذة عائمة — الإشعارات heads-up فقط)
                                                       Navigator.push(
                                                           context,
                                                           CupertinoPageRoute(
@@ -2039,38 +2054,6 @@ class _HomeState extends State<Home>
                                       child: Column(
                                         mainAxisSize: MainAxisSize.min,
                                         children: [
-                                          Row(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.center,
-                                            children: [
-                                              Text(
-                                                "مطور التطبيق (هاني حسام)",
-                                                style: TextStyle(
-                                                  color: getValue("darkMode")
-                                                      ? Colors.white70
-                                                      : Colors.black87,
-                                                  fontSize: 14.sp,
-                                                  fontFamily: "cairo",
-                                                ),
-                                              ),
-                                              SizedBox(width: 12.w),
-                                              IconButton(
-                                                onPressed: () async {
-                                                  final uri = Uri.parse(
-                                                      "https://wa.me/201004126245");
-                                                  await launchUrl(uri,
-                                                      mode: LaunchMode
-                                                          .externalApplication);
-                                                },
-                                                icon: Icon(FontAwesome.whatsapp,
-                                                    color: getValue("darkMode")
-                                                        ? Colors.white70
-                                                        : Colors.green,
-                                                    size: 20.sp),
-                                              ),
-                                            ],
-                                          ),
-                                          SizedBox(height: 16.h),
                                           EasyContainer(
                                             borderRadius: 25,
                                             customPadding:

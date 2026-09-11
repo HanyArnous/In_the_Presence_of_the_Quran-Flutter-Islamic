@@ -111,36 +111,58 @@ class _SplashScreenState extends State<SplashScreen> {
     await Future.delayed(const Duration(seconds: 1));
     final SharedPreferences prefs = await SharedPreferences.getInstance();
 
-    if (prefs.getString("hadithlist-100000-$lang") != null) {
-      return;
+    // لا تعتبر المفتاح الموجود صالحاً إلا إذا كان قائمة غير فارغة،
+    // وإلا احذفه حتى يُعاد الجلب بدل تجميد مكتبة فارغة للأبد.
+    try {
+      final existing = prefs.getString("hadithlist-100000-$lang");
+      if (existing != null) {
+        final list = json.decode(existing) as List<dynamic>;
+        if (list.isNotEmpty) return;
+      }
+      await prefs.remove("hadithlist-100000-$lang");
+    } catch (_) {
+      try {
+        await prefs.remove("hadithlist-100000-$lang");
+      } catch (_) {}
     }
 
     try {
-      Response response = await Dio().get(
+      final dio = Dio(BaseOptions(
+        connectTimeout: const Duration(seconds: 15),
+        receiveTimeout: const Duration(seconds: 45),
+        sendTimeout: const Duration(seconds: 15),
+      ));
+      Response response = await dio.get(
           "https://hadeethenc.com/api/v1/categories/roots/?language=$lang");
 
       if (response.data != null) {
         final jsonData = json.encode(response.data);
         prefs.setString("categories-$lang", jsonData);
 
+        // اجمع الكل في الذاكرة واكتب مفتاح التجميع مرة واحدة في النهاية
+        // حتى لا يُحفظ تجميع ناقص عند فشل منتصف الحلقة.
+        final List<dynamic> aggregate = [];
         for (var category in response.data) {
-          Response response2 = await Dio().get(
-              "https://hadeethenc.com/api/v1/hadeeths/list/?language=$lang&category_id=${category["id"]}&per_page=699999");
+          try {
+            Response response2 = await dio.get(
+                "https://hadeethenc.com/api/v1/hadeeths/list/?language=$lang&category_id=${category["id"]}&per_page=699999");
 
-          if (response2.data != null) {
-            final categoryJson = json.encode(response2.data["data"]);
-            prefs.setString("hadithlist-${category["id"]}-$lang", categoryJson);
-
-            final key = "hadithlist-100000-$lang";
-            if (prefs.getString(key) == null) {
-              prefs.setString(key, categoryJson);
-            } else {
-              final oldData =
-                  json.decode(prefs.getString(key)!) as List<dynamic>;
-              oldData.addAll(json.decode(categoryJson));
-              prefs.setString(key, json.encode(oldData));
+            if (response2.data != null) {
+              final items = response2.data["data"];
+              if (items is List && items.isNotEmpty) {
+                final categoryJson = json.encode(items);
+                prefs.setString(
+                    "hadithlist-${category["id"]}-$lang", categoryJson);
+                aggregate.addAll(items);
+              }
             }
+          } catch (_) {
+            // تابع باقي التصنيفات بدل إجهاض الكل
           }
+        }
+        if (aggregate.isNotEmpty) {
+          await prefs.setString(
+              "hadithlist-100000-$lang", json.encode(aggregate));
         }
       }
     } catch (e) {

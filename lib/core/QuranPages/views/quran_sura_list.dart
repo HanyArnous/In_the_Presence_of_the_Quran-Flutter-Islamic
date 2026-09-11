@@ -876,7 +876,11 @@ class _SurahListPageState extends State<SurahListPage> {
                                                   }
                                                 },
                                                 style: TextStyle(
-                                                    fontFamily: "aldahabi",
+                                                    // خط المصحف نفسه (aldahabi غير مسجل في الخطوط)
+                                                    fontFamily: (getValue(
+                                                                "selectedFontFamily") ??
+                                                            "UthmanicHafs13")
+                                                        .toString(),
                                                     color: getValue("darkMode")
                                                         ? const Color.fromARGB(
                                                             228, 255, 255, 255)
@@ -889,7 +893,10 @@ class _SurahListPageState extends State<SurahListPage> {
                                                 decoration: InputDecoration(
                                                   hintText: 'searchQuran'.tr(),
                                                   hintStyle: TextStyle(
-                                                      fontFamily: "aldahabi",
+                                                      fontFamily: (getValue(
+                                                                  "selectedFontFamily") ??
+                                                              "UthmanicHafs13")
+                                                          .toString(),
                                                       color:
                                                           getValue("darkMode")
                                                               ? Colors.white70
@@ -1118,8 +1125,10 @@ class _SurahListPageState extends State<SurahListPage> {
                                                             fontSize: 14.sp,
                                                             fontWeight: FontWeight
                                                                 .w700, // Text color
-                                                            fontFamily:
-                                                                "uthmanic"),
+                                                            fontFamily: (getValue(
+                                                                        "selectedFontFamily") ??
+                                                                    "UthmanicHafs13")
+                                                                .toString()),
                                                       ),
                                                       if (bookmarks
                                                               .indexWhere((a) {
@@ -1149,7 +1158,7 @@ class _SurahListPageState extends State<SurahListPage> {
                                                 subtitle: Text(
                                                   "$suraNameEnglishTranslated ($ayahCount)",
                                                   style: TextStyle(
-                                                      fontFamily: "uthmanic",
+                                                      fontFamily: "cairo",
                                                       fontSize: 14.sp,
                                                       color: Colors.grey
                                                           .withOpacity(.8)),
@@ -1258,7 +1267,11 @@ class _SurahListPageState extends State<SurahListPage> {
                                                           getValue("darkMode")
                                                               ? Colors.white
                                                               : Colors.black,
-                                                      fontFamily: "uthmanic",
+                                                      // نفس خط المصحف المختار (uthmanic غير مسجل)
+                                                      fontFamily: (getValue(
+                                                                  "selectedFontFamily") ??
+                                                              "UthmanicHafs13")
+                                                          .toString(),
                                                       fontSize: 17.sp),
                                                 ),
                                               ),

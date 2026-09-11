@@ -10,7 +10,7 @@
 
 ### **1. Git Configuration**
 ```bash
-git config user.email "hany.arnous@gmail.com"
+git config user.email "hany.hossam.arnous@gmail.com"
 git config user.name "HANY_ARNOUS"
 ```
 

@@ -10,7 +10,7 @@
 <h1>سياسة الخصوصية — في رحاب الرحمن</h1>
 <p><strong>آخر تحديث:</strong> 10 سبتمبر 2026<br>
 <strong>المطور:</strong> Hany Arnous — <a href="https://github.com/HanyArnous">github.com/HanyArnous</a><br>
-<strong>البريد:</strong> hany.arnous@gmail.com<br>
+<strong>البريد:</strong> hany.hossam.arnous@gmail.com<br>
 <strong>Package:</strong> com.hanyarnous.quranpresence</p>
 
 <h2>1. نظرة عامة</h2>
@@ -20,10 +20,13 @@
 <table>
 <tr><th>النوع</th><th>المصدر</th><th>الغرض</th><th>مشاركة مع طرف ثالث</th></tr>
 <tr><td>الموقع الدقيق (GPS)</td><td>Geolocator + Geocoding</td><td>حساب أوقات الصلاة واتجاه القبلة فقط عند تفعيل المستخدم</td><td>يُرسل إلى api.aladhan.com (إحداثيات فقط) لحساب التقويم الهجري</td></tr>
-<tr><td>ملفات صوتية / صور</td><td>تحميل التلاوات وحفظ لقطات الشاشة</td><td>حفظ في مجلد Download/quran عبر MediaStore</td><td>لا</td></tr>
+<tr><td>ملفات صوتية / صور</td><td>تحميل التلاوات وحفظ لقطات الشاشة</td><td>حفظ على جهازك في مجلد التنزيلات (التلاوات) ومعرض الصور (اللقطات)</td><td>لا</td></tr>
 <tr><td>الإشعارات</td><td>POST_NOTIFICATIONS</td><td>تذكير بالآيات والأحاديث والأذكار (WorkManager + flutter_local_notifications)</td><td>لا</td></tr>
 <tr><td>إحصائيات الاستخدام</td><td>Hive محلي</td><td>حساب مدة الاستماع وعدد الختمات</td><td>لا — تخزين محلي فقط</td></tr>
 <tr><td>الموقع التقريبي</td><td>ACCESS_COARSE_LOCATION</td><td>بديل عند عدم توفر الدقيق</td><td>نفس أعلاه</td></tr>
+<tr><td>الإنترنت</td><td>INTERNET (HTTPS فقط)</td><td>جلب أوقات الصلاة من api.aladhan.com والتلاوات من mp3quran.net وصور القراء</td><td>الإحداثيات فقط إلى api.aladhan.com — لا بيانات شخصية</td></tr>
+<tr><td>الكتابة على التخزين (قديم)</td><td>WRITE_EXTERNAL_STORAGE (maxSdk 32 فقط)</td><td>حفظ التلاوات على أجهزة أندرويد القديمة</td><td>لا</td></tr>
+<tr><td>الاهتزاز ومنع النوم</td><td>VIBRATE + WAKE_LOCK</td><td>تنبيه الأذان وعرض شاشة التنبيه في وقتها</td><td>لا</td></tr>
 </table>
 
 <h2>3. الأذونات المطلوبة ولماذا</h2>
@@ -33,9 +36,10 @@
 <li><code>FOREGROUND_SERVICE + MEDIA_PLAYBACK</code> — لتشغيل التلاوة في الخلفية.</li>
 <li><code>READ_MEDIA_AUDIO / READ_EXTERNAL_STORAGE (maxSdk 32)</code> — لقراءة التلاوات المحملة.</li>
 <li><code>RECEIVE_BOOT_COMPLETED</code> — لإعادة جدولة الإشعارات بعد إعادة التشغيل.</li>
-<li><code>SYSTEM_ALERT_WINDOW</code> (عبر flutter_overlay_window) — لعرض نافذة الذكر العائمة (اختيارية، تفعّل فقط بموافقة منفصلة).</li>
+<li><code>SCHEDULE_EXACT_ALARM</code> — لضبط منبه الأذان في وقته الدقيق مع بديل غير دقيق عند رفض الإذن. لا نطلب <code>USE_EXACT_ALARM</code>.</li>
+<li><code>USE_FULL_SCREEN_INTENT</code> — لعرض شاشة الأذان كاملة عند حلول وقت الصلاة (وظيفة منبه). بدون الإذن تظهر الإشعارات كتنبيه عادي.</li>
 </ul>
-<p><strong>لا نطلب <code>MANAGE_EXTERNAL_STORAGE</code></strong> — نستخدم Scoped Storage عبر MediaStore.</p>
+<p><strong>لا نطلب <code>MANAGE_EXTERNAL_STORAGE</code> ولا إعفاء البطارية (<code>REQUEST_IGNORE_BATTERY_OPTIMIZATIONS</code>) ولا نافذة عائمة (<code>SYSTEM_ALERT_WINDOW</code>)</strong> — لا توجد نافذة عائمة في التطبيق.</p>
 
 <h2>4. مشاركة البيانات</h2>
 <p>الإحداثيات فقط تُرسل إلى <code>https://api.aladhan.com</code> لحساب أوقات الصلاة. لا نبيع أو نشارك أي بيانات مع معلنين. صور القراء تُجلب عبر Google Custom Search API بطلب مباشر من الجهاز.</p>
@@ -53,9 +57,9 @@
 <p>سيتم نشر أي تحديث لهذه السياسة في نفس الرابط مع تحديث تاريخ "آخر تحديث".</p>
 
 <h2>9. اتصل بنا</h2>
-<p>للاستفسار: hany.arnous@gmail.com أو عبر <a href="https://github.com/HanyArnous/In_the_Presence_of_the_Quran-Flutter-Islamic/issues">GitHub Issues</a>.</p>
+<p>للاستفسار: hany.hossam.arnous@gmail.com أو عبر <a href="https://github.com/HanyArnous/In_the_Presence_of_the_Quran-Flutter-Islamic/issues">GitHub Issues</a>.</p>
 
 <hr>
-<p><em>English summary:</em> We collect precise location only when you enable prayer times/qibla, sent to api.aladhan.com for calculation. Audio/files are stored via MediaStore in Download/quran. No data is sold. All transport is HTTPS. Contact: hany.arnous@gmail.com</p>
+<p><em>English summary:</em> We collect precise location only when you enable prayer times/qibla, sent to api.aladhan.com for calculation. Reciter images are fetched via Google Custom Search API directly from your device. Audio/files are stored on your device (Downloads folder / gallery). No overlay window, no battery exemption, no data sold. All transport is HTTPS. Contact: hany.hossam.arnous@gmail.com</p>
 </body>
 </html>

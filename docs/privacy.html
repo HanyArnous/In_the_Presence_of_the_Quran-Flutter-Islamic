@@ -8,7 +8,7 @@
 </head>
 <body>
 <h1>سياسة الخصوصية — في رحاب الرحمن</h1>
-<p><strong>آخر تحديث:</strong> 10 سبتمبر 2026<br>
+<p><strong>آخر تحديث:</strong> 11 سبتمبر 2026<br>
 <strong>المطور:</strong> Hany Arnous — <a href="https://github.com/HanyArnous">github.com/HanyArnous</a><br>
 <strong>البريد:</strong> hany.hossam.arnous@gmail.com<br>
 <strong>Package:</strong> com.hanyarnous.quranpresence</p>
@@ -56,10 +56,47 @@
 <h2>8. التغييرات</h2>
 <p>سيتم نشر أي تحديث لهذه السياسة في نفس الرابط مع تحديث تاريخ "آخر تحديث".</p>
 
-<h2>9. اتصل بنا</h2>
-<p>للاستفسار: hany.hossam.arnous@gmail.com أو عبر <a href="https://github.com/HanyArnous/In_the_Presence_of_the_Quran-Flutter-Islamic/issues">GitHub Issues</a>.</p>
+<h2>9. مصادر المحتوى وواجهات API المستخدمة</h2>
+<p>يعتمد التطبيق على المصادر والخدمات التالية لجلب المحتوى الديني، وجميع الطلبات تتم مباشرة من جهازك عبر <code>https://</code> فقط:</p>
+<table>
+<tr><th>المصدر / الـ API</th><th>المحتوى المستخدم</th><th>البيانات المرسلة من الجهاز</th><th>الغرض</th></tr>
+<tr><td>mp3quran.net API v3</td><td>قوائم القراء والمصاحف والسور والإذاعات (reciters / moshaf / suwar / radios) وروابط صوتيات التلاوة</td><td>رمز اللغة فقط (language) وطلبات التحميل</td><td>عرض التلاوات وتشغيلها وتحميلها على جهازك</td></tr>
+<tr><td>api.aladhan.com v1</td><td>مواقيت الصلاة والتقويم الهجري (calendar)</td><td>الإحداثيات (latitude/longitude) فقط لحظة الحساب</td><td>حساب المواقيت والتقويم حسب موقعك</td></tr>
+<tr><td>hadeethenc.com API v1</td><td>تصنيفات ونصوص موسوعة الأحاديث (categories / hadeeths)</td><td>رمز اللغة ورقم التصنيف (language + category_id) فقط</td><td>عرض الأحاديث المترجمة داخل التطبيق</td></tr>
+<tr><td>Google Custom Search JSON API</td><td>صور القراء (بحث صور فقط)</td><td>اسم القارئ كنص بحث فقط</td><td>عرض صورة تعريفية للقارئ — الحقوق لأصحاب الصور الأصليين</td></tr>
+<tr><td>hisnmuslim.com</td><td>صوتيات الأذكار (بث مباشر)</td><td>لا شيء — تشغيل مباشر فقط</td><td>تشغيل صوت الذكر عند الطلب</td></tr>
+</table>
+
+<h2>10. التراخيص وشروط الاستخدام لكل مصدر</h2>
+<ul>
+<li><strong>mp3quran.net — ترخيص مفتوح مجاني للجميع:</strong> ينص الموقع على أن <em>"All rights are available to everyone, and we allow any visitor or developer to copy any material or use any link"</em>. نستخدم الـ API والروابط الصوتية كما هي دون تحريف، مع الإشارة للمصدر. الشروط والتوثيق: <a href="https://mp3quran.net/eng/privacy">سياسة mp3quran</a> — <a href="https://www.mp3quran.net/ar/api">توثيق الـ API</a>.</li>
+<li><strong>AlAdhan (api.aladhan.com) — خدمة مجانية بدون مفتاح + كود GPL-3.0 + بدون ضمان:</strong> الخدمة مقدمة كما هي <em>"WITHOUT ANY WARRANTY"</em> وقد لا تكون المواقيت دقيقة بكل المعايير لأنها حسابية، وكود الـ API مرخص <code>GPL-3.0</code>. نلتزم بالاستخدام العادل مع شكر Islamic Network وفريق PrayTimes. الشروط: <a href="https://aladhan.com/credits-and-terms">Credits, Terms and Conditions</a>.</li>
+<li><strong>HadeethEnc (hadeethenc.com) — محتوى وقفي مجاني للاستخدام الدعوي والتعليمي غير التجاري مع النسبة:</strong> رسالة الموسوعة <em>"providing them for free through all available means"</em> كمرجع دولي مجاني. نعرض النصوص مع النسبة للموسوعة (HadeethEnc / IslamHouse) دون تحريف، وأي استخدام تجاري يتطلب إذنهم. المرجع: <a href="https://hadeethenc.com/en/home/about">عن الموسوعة</a> — <a href="https://hadeethenc.com/en/home/developers">صفحة المطورين</a>.</li>
+<li><strong>Google Custom Search JSON API — رخصة Google APIs بمفتاح رسمي وحصة مجانية، وحقوق النتائج لأصحابها:</strong> الاستخدام بمفتاح API رسمي ضمن الحصة المجانية (100 طلب/يوم) ويخضع لشروط Google APIs، والصور المعروضة ملك ناشريها الأصليين وتخضع لشروطهم. المرجع: <a href="https://developers.google.com/custom-search/v1/overview">توثيق الخدمة والأسعار</a> — <a href="https://developers.google.com/terms/site-policies">سياسات Google</a>.</li>
+<li><strong>HisnMuslim audio (hisnmuslim.com) — استخدام شخصي ودعوي غير تجاري مع النسبة، ممنوع البيع:</strong> صوتيات الأذكار للاستماع الشخصي والتعبدي فقط، ويُمنع بيعها أو استخدامها في منتجات تجارية/إعلانية دون إذن كتابي، مع النسبة لكتاب حصن المسلم وموقعه. المرجع: <a href="https://www.hisnmuslim.com/">hisnmuslim.com</a>.</li>
+</ul>
+<p>جميع النصوص القرآنية تُعرض دون تحريف. أسماء القراء والتلاوات والترجمات والصور والعلامات ملك لأصحابها ومزوديها، وعرضها داخل التطبيق لا يعني نقل ملكيتها لنا. عند ورود أي طلب إزالة مشروع من صاحب حق سنلتزم بالمعالجة والإزالة خلال مدة معقولة عبر بريدنا أدناه.</p>
+
+<h2>11. إخلاء المسؤولية</h2>
+<ul>
+<li>مواقيت الصلاة والتقويم الهجري <strong>حسابية تقريبية</strong> تعتمد على إحداثيات جهازك وطريقة الحساب المختارة، وقد تختلف عن تقويم مسجدك — يرجى التحقق محلياً، خصوصاً للصيام والفجر والعشاء.</li>
+<li>نصوص التفسير والحديث والترجمات والأذكار لأغراض <strong>التعليم والتدبر</strong> ولا تغني عن مراجعة العلماء والمصادر المعتمدة.</li>
+<li>الخدمات الخارجية (mp3quran / AlAdhan / HadeethEnc / Google / HisnMuslim) قد تتوقف أو تتغير مؤقتاً لأسباب خارجة عن إرادتنا، وقد تتعطل ميزة مرتبطة بها لحين عودتها — لا نضمن استمرارية أي خدمة خارجية.</li>
+<li>التطبيق مقدم <strong>"كما هو" (AS IS) دون أي ضمان</strong> صريح أو ضمني، وباستخدامك له تقر بذلك.</li>
+</ul>
+
+<h2>12. عدم التربح وعدم البيع والحماية القانونية</h2>
+<ul>
+<li>التطبيق <strong>مجاني 100%</strong>: لا إعلانات، ولا مشتريات داخلية، ولا تبرعات إجبارية، ولا بيع لأي بيانات.</li>
+<li><strong>لا نبيع ولا نشتري ولا نؤجر أي بيانات شخصية.</strong> الإحداثيات تُستخدم لحظياً لحساب المواقيت فقط ولا تُخزن على خوادمنا (لا توجد خوادم لنا أصلاً — كل التخزين محلي على جهازك).</li>
+<li>يُحظر على الغير استخراج محتوى التطبيق أو إعادة بيعه أو تقديمه كحزمة/خدمة مدفوعة مستقلة. الاستخدام الشخصي غير التجاري مسموح.</li>
+<li>أي استخدام مخالف لشروط مزودي المحتوى أعلاه يتحمل مسؤوليته مرتكبه، ويحق لنا تقييد أو إيقاف أي إساءة استخدام حفاظاً على استمرار الخدمة المجانية للجميع.</li>
+</ul>
+
+<h2>13. اتصل بنا</h2>
+<p>للاستفسار أو طلبات إزالة المحتوى: hany.hossam.arnous@gmail.com أو عبر <a href="https://github.com/HanyArnous/In_the_Presence_of_the_Quran-Flutter-Islamic/issues">GitHub Issues</a>.</p>
 
 <hr>
-<p><em>English summary:</em> We collect precise location only when you enable prayer times/qibla, sent to api.aladhan.com for calculation. Reciter images are fetched via Google Custom Search API directly from your device. Audio/files are stored on your device (Downloads folder / gallery). No overlay window, no battery exemption, no data sold. All transport is HTTPS. Contact: hany.hossam.arnous@gmail.com</p>
+<p><em>English summary:</em> We collect precise location only when you enable prayer times/qibla, sent to api.aladhan.com for calculation. Reciter images are fetched via Google Custom Search API directly from your device. Audio/files are stored on your device (Downloads folder / gallery). No overlay window, no battery exemption, no data sold. Content sources: mp3quran.net API v3 (open license — free for all developers), AlAdhan API (free key-less service, GPL-3.0 code, no warranty on accuracy), HadeethEnc API (free dawah/educational non-commercial use with attribution), Google Custom Search JSON API (official key, free quota, image rights belong to original publishers), HisnMuslim audio (personal/devotional non-commercial use only, no resale). The app is 100% free with no ads, no in-app purchases, and no sale of data. All transport is HTTPS. For takedown requests contact: hany.hossam.arnous@gmail.com</p>
 </body>
 </html>

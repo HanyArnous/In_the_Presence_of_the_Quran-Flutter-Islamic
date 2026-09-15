@@ -149,7 +149,14 @@ class QuranDetailsPageState extends State<QuranDetailsPage> {
     _scrollController.addListener(_scrollListener);
 
     SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+    // Android 15 Edge-to-Edge: immersive مع ألوان شفافة عبر الـ API الحديثة
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+    SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      systemNavigationBarColor: Colors.transparent,
+      statusBarIconBrightness: Brightness.light,
+      systemNavigationBarIconBrightness: Brightness.light,
+    ));
 
     _pageController = PageController(initialPage: index);
     _pageController.addListener(_pagecontroller_scrollListner);
@@ -247,6 +254,10 @@ class QuranDetailsPageState extends State<QuranDetailsPage> {
   void dispose() {
     _audioIndexSubscription?.cancel();
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      systemNavigationBarColor: Colors.transparent,
+    ));
     WakelockPlus.disable();
     super.dispose();
   }
@@ -703,6 +714,16 @@ class QuranDetailsPageState extends State<QuranDetailsPage> {
                 shouldHighlightText: widget.shouldHighlightText,
                 highlightVerse: widget.highlightVerse,
                 onShowAyahOptions: (p, s, v) => showAyahOptionsSheet(p, s, v),
+                onBack: () {
+                  if (scaffoldKey.currentState?.isEndDrawerOpen == true) {
+                    Navigator.of(context).pop();
+                  } else {
+                    Navigator.of(context, rootNavigator: true).maybePop();
+                  }
+                },
+                onSettings: () {
+                  scaffoldKey.currentState?.openEndDrawer();
+                },
               );
             } else {
               // العرض الافتراضي - عرض صفحة

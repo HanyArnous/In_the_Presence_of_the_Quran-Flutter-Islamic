@@ -22,10 +22,10 @@ class Category {
     });
 
     factory Category.fromJson(Map<String, dynamic> json) => Category(
-        id: json["id"],
-        title: json["title"],
-        hadeethsCount: json["hadeeths_count"],
-        parentId: json["parent_id"],
+        id: json["id"]?.toString() ?? "",
+        title: json["title"]?.toString() ?? "",
+        hadeethsCount: json["hadeeths_count"]?.toString() ?? "0",
+        parentId: json["parent_id"]?.toString(),
     );
 
     Map<String, dynamic> toJson() => {

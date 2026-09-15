@@ -25,6 +25,62 @@ part 'player_bloc_state.dart';
 class PlayerBlocBloc extends Bloc<PlayerBlocEvent, PlayerBlocState> {
   // منع التسريب: مستمع واحد فقط لحساب وقت الاستماع
   StreamSubscription<PlayerState>? _listeningSubscription;
+
+  // --- تتبع تقدم التحميل: النسبة والمساحة أثناء التحميل ---
+  static final ValueNotifier<Map<String, double>> downloadProgress = ValueNotifier({});
+  static final ValueNotifier<Map<String, String>> downloadSizeInfo = ValueNotifier({});
+
+  static String _formatBytes(int bytes) {
+    if (bytes <= 0) return "0 B";
+    const suffixes = ["B", "KB", "MB", "GB"];
+    double size = bytes.toDouble();
+    int i = 0;
+    while (size >= 1024 && i < suffixes.length - 1) {
+      size /= 1024;
+      i++;
+    }
+    return "${size.toStringAsFixed(i == 0 ? 0 : 1)} ${suffixes[i]}";
+  }
+
+  static void _setProgress(String key, double progress, {int received = 0, int total = 0}) {
+    final newMap = Map<String, double>.from(downloadProgress.value);
+    newMap[key] = progress.clamp(0.0, 1.0);
+    downloadProgress.value = newMap;
+    if (total > 0) {
+      final info = "${_formatBytes(received)} / ${_formatBytes(total)} (${(progress * 100).toStringAsFixed(0)}%)";
+      final newInfo = Map<String, String>.from(downloadSizeInfo.value);
+      newInfo[key] = info;
+      downloadSizeInfo.value = newInfo;
+    }
+  }
+
+  static void _clearProgress(String key) {
+    final newMap = Map<String, double>.from(downloadProgress.value);
+    newMap.remove(key);
+    downloadProgress.value = newMap;
+    final newInfo = Map<String, String>.from(downloadSizeInfo.value);
+    newInfo.remove(key);
+    downloadSizeInfo.value = newInfo;
+    _cancelTokens.remove(key);
+  }
+
+  // تخزين CancelToken لكل تحميل للسماح بالإيقاف
+  static final Map<String, CancelToken> _cancelTokens = {};
+
+  static void cancelDownload(String key) {
+    final token = _cancelTokens[key];
+    if (token != null && !token.isCancelled) {
+      try {
+        token.cancel("تم إيقاف التحميل بواسطة المستخدم");
+      } catch (_) {}
+    }
+  }
+
+  static bool isDownloading(String key) {
+    final p = downloadProgress.value[key];
+    return p != null && p >= 0 && p < 1;
+  }
+
   PlayerBlocBloc() : super(PlayerBlocInitial()) {
     on<PlayerBlocEvent>((event, emit) async {
       if (event is StartPlaying) {
@@ -243,8 +299,25 @@ class PlayerBlocBloc extends Bloc<PlayerBlocEvent, PlayerBlocState> {
           Fluttertoast.showToast(msg: "هذه السورة محملة بالفعل");
           return;
         }
+        final progressKey = "${event.reciter.name}-${event.moshaf.id}-${event.suraNumber}";
         try {
-          await dio.download(event.url, filePath);
+          // تهيئة التقدم 0% مع CancelToken للسماح بالإيقاف
+          _setProgress(progressKey, 0, received: 0, total: 0);
+          final token = CancelToken();
+          _cancelTokens[progressKey] = token;
+          await dio.download(event.url, filePath, cancelToken: token, onReceiveProgress: (received, total) {
+            if (total != -1 && total > 0) {
+              final prog = received / total;
+              _setProgress(progressKey, prog, received: received, total: total);
+            } else if (received > 0) {
+              // حالة عدم معرفة الحجم الكلي
+              final info = "${_formatBytes(received)} / ...";
+              final newInfo = Map<String, String>.from(downloadSizeInfo.value);
+              newInfo[progressKey] = info;
+              downloadSizeInfo.value = newInfo;
+            }
+          });
+          _clearProgress(progressKey);
           final file = File(filePath);
           int fileSize = await file.length();
           await _addDownloadedSurahEntry(
@@ -258,9 +331,21 @@ class PlayerBlocBloc extends Bloc<PlayerBlocEvent, PlayerBlocState> {
           );
           Fluttertoast.showToast(msg: "تم تحميل السورة بنجاح");
         } catch (e) {
+          final wasCancelled = e is DioException && e.type == DioExceptionType.cancel;
+          _clearProgress(progressKey);
+          // حذف ملف ناقص إن وجد
+          try { if (File(filePath).existsSync()) File(filePath).deleteSync(); } catch (_) {}
           debugPrint("DownloadSurah error: $e");
-          Fluttertoast.showToast(msg: "فشل تحميل السورة");
+          if (wasCancelled) {
+            Fluttertoast.showToast(msg: "تم إيقاف التحميل");
+          } else {
+            Fluttertoast.showToast(msg: "فشل تحميل السورة");
+          }
         }
+      } else if (event is CancelDownload) {
+        cancelDownload(event.key);
+        Fluttertoast.showToast(msg: "جاري إيقاف التحميل...");
+        return;
       } else if (event is DownloadAllSurahs) {
         await _requestPermissions();
         final arnousDir = Directory("/storage/emulated/0/Download/arnous/");
@@ -284,8 +369,18 @@ class PlayerBlocBloc extends Bloc<PlayerBlocEvent, PlayerBlocState> {
           }
           String url =
               "${event.moshaf.server}/${s.toString().padLeft(3, "0")}.mp3";
+          final progressKey = "${event.reciter.name}-${event.moshaf.id}-$s";
           try {
-            await dio.download(url, filePath);
+            _setProgress(progressKey, 0, received: 0, total: 0);
+            final token = CancelToken();
+            _cancelTokens[progressKey] = token;
+            await dio.download(url, filePath, cancelToken: token, onReceiveProgress: (received, totalBytes) {
+              if (totalBytes != -1 && totalBytes > 0) {
+                final prog = received / totalBytes;
+                _setProgress(progressKey, prog, received: received, total: totalBytes);
+              }
+            });
+            _clearProgress(progressKey);
             final file = File(filePath);
             int fileSize = await file.length();
             await _addDownloadedSurahEntry(
@@ -302,7 +397,10 @@ class PlayerBlocBloc extends Bloc<PlayerBlocEvent, PlayerBlocState> {
                 msg: "تم تحميل $completed/$total سورة",
                 toastLength: Toast.LENGTH_SHORT);
           } catch (e) {
-            debugPrint("DownloadAllSurahs error on $s: $e");
+            final wasCancelled = e is DioException && e.type == DioExceptionType.cancel;
+            _clearProgress(progressKey);
+            try { if (File(filePath).existsSync()) File(filePath).deleteSync(); } catch (_) {}
+            if (!wasCancelled) debugPrint("DownloadAllSurahs error on $s: $e");
           }
         }
         Fluttertoast.showToast(msg: "اكتمل تحميل المصحف");

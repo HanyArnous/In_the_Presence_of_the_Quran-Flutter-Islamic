@@ -56,7 +56,6 @@
     "zikrNotification": "Zikr-Benachrichtigungen",
     "zikrNotificationDetails": "Erhalten Sie kleine Benachrichtigungen über zufällige Dhikr rechts auf dem Bildschirm",
     "zikrNotificationDetails2": "Es erscheint eine Benachrichtigung mit einer zufälligen Erwähnung",
-
     "allReciters": "Alle Rezitatoren",
     "searchreciters": "Nach Rezitator suchen",
     "searchBysura": "Suche nach Surah",
@@ -92,6 +91,9 @@
     "newBookmark": "Neues Lesezeichen hinzufügen",
     "nameOfBookmark": "Geben Sie ihm einen eindeutigen Namen",
     "color": "Farbe des Lesezeichens",
-    "saveBookmark": "Lesezeichen speichern"
-
+    "saveBookmark": "Lesezeichen speichern",
+    "khatma": "Chatma",
+    "backup": "Sicherung",
+    "azan": "Azan",
+    "prayer_settings": "Azan-Einstellungen"
 }

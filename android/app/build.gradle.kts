@@ -13,14 +13,15 @@ kotlin {
 
 android {
     namespace = "com.hanyarnous.quranpresence"
-    compileSdk = flutter.compileSdkVersion
-
+    // Android 15 (API 35) - مطلوب للعرض حتى حافة الشاشة وفحص خدمات المقدمة
+    // compileSdk 36 لحل تضارب androidx.core 1.17 مع target 35
+    compileSdk = 36
     ndkVersion = flutter.ndkVersion
 
     defaultConfig {
         applicationId = "com.hanyarnous.quranpresence"
         minSdk = flutter.minSdkVersion
-        targetSdk = flutter.targetSdkVersion
+        targetSdk = 35
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }
@@ -84,4 +85,7 @@ flutter {
 dependencies {
     // السطر المطلوب لحل مشكلة الإشعارات
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
+    // Android 15 Edge-to-Edge الحديث (بدل APIs المتوقفة)
+    implementation("androidx.activity:activity-ktx:1.9.2")
+    implementation("androidx.core:core-ktx:1.13.1")
 }

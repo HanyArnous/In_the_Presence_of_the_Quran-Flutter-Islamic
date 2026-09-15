@@ -266,7 +266,8 @@ class _PlayerBarState extends State<PlayerBar> with AutomaticKeepAliveClientMixi
                           ),
                         ));
                   } else if (statee is PlayerBarVisible) {
-                    if (statee.height == 60) {
+                    final bool isMini = statee.height == 60 || statee.height == 70;
+                    if (isMini) {
                       isMinimized = true;
                     } else {
                       isMinimized = false;
@@ -283,26 +284,30 @@ class _PlayerBarState extends State<PlayerBar> with AutomaticKeepAliveClientMixi
                             onTap: null,
                             child: AnimatedContainer(
                               duration: const Duration(milliseconds: 300),
-                              height: statee.height == 60
-                                  ? 60.h
+                              height: isMini
+                                  ? 78.h
                                   : (MediaQuery.of(context).size.height),
                               width: MediaQuery.of(context).size.width,
                               decoration: BoxDecoration(
-                                  color: statee.height == 60
+                                  color: isMini
                                       ? const m.Color.fromARGB(255, 82, 96, 175)
                                       : Colors.white,
-                                  borderRadius: statee.height == 60
+                                  borderRadius: isMini
                                       ? const BorderRadius.only(
                                           topLeft: Radius.circular(13),
                                           topRight: Radius.circular(13))
                                       : BorderRadius.zero),
-                              child: statee.height == 60
-                                  ? Padding(
-                                      padding: EdgeInsets.symmetric(
-                                          horizontal: 14.0.w),
-                                      child: Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.spaceBetween,
+                              child: isMini
+                                  ? Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        Padding(
+                                          padding: EdgeInsets.symmetric(
+                                              horizontal: 14.0.w),
+                                          child: Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.spaceBetween,
                                         children: [
                                           StreamBuilder(
                                               stream: state.audioPlayer
@@ -551,6 +556,75 @@ class _PlayerBarState extends State<PlayerBar> with AutomaticKeepAliveClientMixi
                                             ),
                                         ],
                                       ),
+                                    ),
+                                        // شريط التقديم المصغر مع عرض الوقت مثل مشغل الأندرويد الأساسي
+                                        StreamBuilder<Duration?>(
+                                          stream: state.audioPlayer.durationStream,
+                                          builder: (context, durationSnapshot) {
+                                            final duration = durationSnapshot.data ?? state.audioPlayer.duration;
+                                            if (duration == null || duration.inMilliseconds <= 0) {
+                                              return Padding(
+                                                padding: EdgeInsets.symmetric(horizontal: 12.w),
+                                                child: SizedBox(
+                                                  height: 14.h,
+                                                  child: const LinearProgressIndicator(
+                                                    minHeight: 2,
+                                                    backgroundColor: Colors.white24,
+                                                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                                  ),
+                                                ),
+                                              );
+                                            }
+                                            final maxMs = duration.inMilliseconds.toDouble();
+                                            return StreamBuilder<Duration>(
+                                              stream: state.audioPlayer.positionStream,
+                                              builder: (context, posSnap) {
+                                                if (posSnap.hasError) return const SizedBox.shrink();
+                                                final pos = posSnap.data ?? Duration.zero;
+                                                final valueMs = pos.inMilliseconds.toDouble().clamp(0.0, maxMs);
+                                                final includeHours = duration.inHours > 0;
+                                                return Padding(
+                                                  padding: EdgeInsets.symmetric(horizontal: 8.w),
+                                                  child: Row(
+                                                    children: [
+                                                      Text(
+                                                        formatDuration(pos, includeHours: includeHours),
+                                                        style: TextStyle(color: Colors.white, fontSize: 10.sp, fontFamily: "roboto"),
+                                                      ),
+                                                      Expanded(
+                                                        child: SliderTheme(
+                                                          data: SliderTheme.of(context).copyWith(
+                                                            trackHeight: 2.h,
+                                                            activeTrackColor: Colors.white,
+                                                            inactiveTrackColor: Colors.white30,
+                                                            thumbColor: Colors.white,
+                                                            overlayColor: Colors.white.withAlpha(0),
+                                                            thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
+                                                            overlayShape: const RoundSliderOverlayShape(overlayRadius: 0),
+                                                            showValueIndicator: ShowValueIndicator.never,
+                                                            valueIndicatorShape: const PaddleSliderValueIndicatorShape(),
+                                                          ),
+                                                          child: Slider(
+                                                            value: valueMs,
+                                                            min: 0,
+                                                            max: maxMs,
+                                                            onChanged: (v) => state.audioPlayer.seek(Duration(milliseconds: v.toInt())),
+                                                          ),
+                                                        ),
+                                                      ),
+                                                      Text(
+                                                        formatDuration(duration, includeHours: includeHours),
+                                                        style: TextStyle(color: Colors.white, fontSize: 10.sp, fontFamily: "roboto"),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                );
+                                              },
+                                            );
+                                          },
+                                        ),
+                                        SizedBox(height: 2.h),
+                                      ],
                                     )
                                   : Material(
                                       color: darkPrimaryColor,
@@ -845,45 +919,22 @@ class _PlayerBarState extends State<PlayerBar> with AutomaticKeepAliveClientMixi
                                                                         .white))),
                                                         Expanded(
                                                           child: SliderTheme(
-                                                            data: SliderTheme.of(
-                                                                    context)
-                                                                .copyWith(
-                                                              activeTrackColor:
-                                                                  const Color
-                                                                      .fromARGB(
-                                                                      255,
-                                                                      255,
-                                                                      255,
-                                                                      255), // Customize track color
-                                                              inactiveTrackColor: Colors
-                                                                  .grey, // Customize inactive track color
-                                                              thumbColor: Colors
-                                                                  .white, // Customize thumb color
-                                                              overlayColor: Colors
-                                                                  .blue
-                                                                  .withAlpha(
-                                                                      50), // Customize overlay color
-                                                              thumbShape:
-                                                                  const RoundSliderThumbShape(
-                                                                      enabledThumbRadius:
-                                                                          10),
-                                                              overlayShape:
-                                                                  const RoundSliderOverlayShape(
-                                                                      overlayRadius:
-                                                                          20),
+                                                            data: SliderTheme.of(context).copyWith(
+                                                              activeTrackColor: const Color.fromARGB(255, 255, 255, 255),
+                                                              inactiveTrackColor: Colors.grey,
+                                                              thumbColor: Colors.white,
+                                                              overlayColor: Colors.white.withAlpha(0),
+                                                              thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 10),
+                                                              overlayShape: const RoundSliderOverlayShape(overlayRadius: 0),
+                                                              showValueIndicator: ShowValueIndicator.never,
+                                                              valueIndicatorShape: const PaddleSliderValueIndicatorShape(),
                                                             ),
                                                             child: Slider(
                                                               value: valueMs,
                                                               min: 0,
                                                               max: maxMs,
-                                                              onChanged:
-                                                                  (value) {
-                                                                // Handle slider value change here
-                                                                state
-                                                                    .audioPlayer
-                                                                    .seek(Duration(
-                                                                        milliseconds:
-                                                                            value.toInt()));
+                                                              onChanged: (value) {
+                                                                state.audioPlayer.seek(Duration(milliseconds: value.toInt()));
                                                               },
                                                             ),
                                                           ),
@@ -954,59 +1005,70 @@ class _PlayerBarState extends State<PlayerBar> with AutomaticKeepAliveClientMixi
                                                           size: 24.sp),
                                                       color: Colors.white,
                                                     ),
-                                                    IconButton(
-                                                      onPressed: () {
-                                                        //               "${event.moshaf.server}/${e.toString().padLeft(3, "0")}.mp3"
-                                                        // .replace(scheme: 'http');
-                                                        final idx = state
-                                                            .audioPlayer
-                                                            .currentIndex;
-                                                        if (idx == null ||
-                                                            idx < 0 ||
-                                                            idx >=
-                                                                state.surahNumbers
-                                                                    .length) {
-                                                          return;
+                                                    ValueListenableBuilder<Map<String, double>>(
+                                                      valueListenable: PlayerBlocBloc.downloadProgress,
+                                                      builder: (context, progressMap, _) {
+                                                        final idx = state.audioPlayer.currentIndex;
+                                                        final key = (idx != null && idx >= 0 && idx < state.surahNumbers.length)
+                                                            ? "${state.reciter.name}-${state.moshaf.id}-${state.surahNumbers[idx]}"
+                                                            : "";
+                                                        final prog = progressMap[key];
+                                                        final isDownloading = prog != null && prog >= 0 && prog < 1;
+                                                        if (isDownloading) {
+                                                          return ValueListenableBuilder<Map<String, String>>(
+                                                            valueListenable: PlayerBlocBloc.downloadSizeInfo,
+                                                            builder: (context, sizeMap, _) {
+                                                              final info = sizeMap[key] ?? "${(prog * 100).toStringAsFixed(0)}%";
+                                                              return Row(
+                                                                mainAxisSize: MainAxisSize.min,
+                                                                children: [
+                                                                  Column(
+                                                                    mainAxisSize: MainAxisSize.min,
+                                                                    children: [
+                                                                      Stack(alignment: Alignment.center, children: [
+                                                                        SizedBox(width: 26.w, height: 26.w, child: CircularProgressIndicator(value: prog, strokeWidth: 2.2, color: Colors.white)),
+                                                                        Text("${(prog * 100).toStringAsFixed(0)}%", style: TextStyle(fontSize: 7.sp, color: Colors.white, fontWeight: FontWeight.bold)),
+                                                                      ]),
+                                                                      SizedBox(height: 1.h),
+                                                                      Text(info, style: TextStyle(fontSize: 6.5.sp, color: Colors.white70, fontFamily: "roboto"), maxLines: 1, overflow: TextOverflow.ellipsis),
+                                                                    ],
+                                                                  ),
+                                                                  SizedBox(width: 4.w),
+                                                                  InkWell(
+                                                                    onTap: () => playerPageBloc.add(CancelDownload(key)),
+                                                                    borderRadius: BorderRadius.circular(10.r),
+                                                                    child: Container(
+                                                                      padding: EdgeInsets.all(3.w),
+                                                                      decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.white.withOpacity(0.18)),
+                                                                      child: Icon(Icons.close, size: 14.sp, color: Colors.white),
+                                                                    ),
+                                                                  ),
+                                                                ],
+                                                              );
+                                                            },
+                                                          );
                                                         }
-
-                                                        if (File(
-                                                                "${appDir.path}${state.reciter.name}-${state.moshaf.id}-${getSurahNameArabic(int.parse(state.surahNumbers[idx]))}.mp3")
-                                                            .existsSync()) {
-                                                        } else {
-                                                          playerPageBloc.add(DownloadSurah(
-                                                              reciter:
-                                                                  state.reciter,
-                                                              moshaf:
-                                                                  state.moshaf,
-                                                              suraNumber: state
-                                                                      .surahNumbers[
-                                                                  idx],
-                                                              url:
-                                                                  "${state.moshaf.server}/${state.surahNumbers[idx].padLeft(3, "0")}.mp3"));
-                                                        } // .replace(scheme: 'http')));
+                                                        return IconButton(
+                                                          onPressed: () {
+                                                            final idx2 = state.audioPlayer.currentIndex;
+                                                            if (idx2 == null || idx2 < 0 || idx2 >= state.surahNumbers.length) return;
+                                                            if (File("${appDir.path}${state.reciter.name}-${state.moshaf.id}-${getSurahNameArabic(int.parse(state.surahNumbers[idx2]))}.mp3").existsSync()) {
+                                                            } else {
+                                                              playerPageBloc.add(DownloadSurah(
+                                                                  reciter: state.reciter,
+                                                                  moshaf: state.moshaf,
+                                                                  suraNumber: state.surahNumbers[idx2],
+                                                                  url: "${state.moshaf.server}/${state.surahNumbers[idx2].padLeft(3, "0")}.mp3"));
+                                                            }
+                                                          },
+                                                          icon: Builder(builder: (context) {
+                                                            final idx3 = state.audioPlayer.currentIndex;
+                                                            final downloaded = idx3 != null && idx3 >= 0 && idx3 < state.surahNumbers.length && File("${appDir.path}${state.reciter.name}-${state.moshaf.id}-${getSurahNameArabic(int.parse(state.surahNumbers[idx3]))}.mp3").existsSync();
+                                                            return Icon(downloaded ? Icons.download_done : Icons.download, size: 24.sp);
+                                                          }),
+                                                          color: Colors.white,
+                                                        );
                                                       },
-                                                      icon: Builder(builder:
-                                                          (context) {
-                                                        final idx = state
-                                                            .audioPlayer
-                                                            .currentIndex;
-                                                        final downloaded = idx !=
-                                                                    null &&
-                                                                idx >= 0 &&
-                                                                idx <
-                                                                    state
-                                                                        .surahNumbers
-                                                                        .length &&
-                                                                File("${appDir.path}${state.reciter.name}-${state.moshaf.id}-${getSurahNameArabic(int.parse(state.surahNumbers[idx]))}.mp3")
-                                                                    .existsSync();
-                                                        return Icon(
-                                                            downloaded
-                                                                ? Icons
-                                                                    .download_done
-                                                                : Icons.download,
-                                                            size: 24.sp);
-                                                      }),
-                                                      color: Colors.white,
                                                     ),
                                                   ],
                                                 ),
@@ -1121,9 +1183,9 @@ class _PlayerBarState extends State<PlayerBar> with AutomaticKeepAliveClientMixi
                                                 height: isPlaylistShown
                                                     ? 240.0.h
                                                     : 50.h,
-                                                child: MaterialApp(
-                                                  //color:  getValue("darkMode")?quranPagesColorDark:quranPagesColorLight,
-                                                  home: StreamBuilder<
+                                                child: Material(
+                                                  color: darkPrimaryColor.withOpacity(.9),
+                                                  child: StreamBuilder<
                                                       SequenceState?>(
                                                     stream: state.audioPlayer
                                                         .sequenceStateStream,

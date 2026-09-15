@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -29,7 +30,7 @@ class _KhatmaPageState extends State<KhatmaPage> {
     final goal = KhatmaService.getActiveGoal();
     return Scaffold(
       appBar: AppBar(
-        title: const Text("هدف الختمة", style: TextStyle(fontFamily: "cairo")),
+        title: Text("khatma".tr(), style: const TextStyle(fontFamily: "cairo")),
         backgroundColor: const Color(0xff6B8E4E),
         foregroundColor: Colors.white,
       ),

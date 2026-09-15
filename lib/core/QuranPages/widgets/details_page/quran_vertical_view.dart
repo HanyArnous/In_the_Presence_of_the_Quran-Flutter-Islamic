@@ -28,6 +28,8 @@ class QuranVerticalView extends StatefulWidget {
   final bool shouldHighlightText;
   final dynamic highlightVerse;
   final Function(int, int, int) onShowAyahOptions;
+  final VoidCallback? onBack;
+  final VoidCallback? onSettings;
 
   const QuranVerticalView({
     Key? key,
@@ -40,6 +42,8 @@ class QuranVerticalView extends StatefulWidget {
     required this.shouldHighlightText,
     required this.highlightVerse,
     required this.onShowAyahOptions,
+    this.onBack,
+    this.onSettings,
   }) : super(key: key);
 
   @override
@@ -71,6 +75,79 @@ class _QuranVerticalViewState extends State<QuranVerticalView> {
       updateValue("quran_reading-totalCount", (totalCount as num) + 1);
     }
     _lastRecordedPage = pageNumber;
+  }
+
+  int _currentPage = 1;
+
+  @override
+  void initState() {
+    super.initState();
+    _currentPage = (getValue("lastRead") is int ? getValue("lastRead") : 1);
+    widget.itemPositionsListener.itemPositions.addListener(_onPositionsChanged);
+  }
+
+  @override
+  void dispose() {
+    try {
+      widget.itemPositionsListener.itemPositions.removeListener(_onPositionsChanged);
+    } catch (_) {}
+    _readingTimer?.cancel();
+    super.dispose();
+  }
+
+  void _onPositionsChanged() {
+    try {
+      final positions = widget.itemPositionsListener.itemPositions.value;
+      if (positions.isEmpty) return;
+      int min = positions.map((e) => e.index).reduce((a, b) => a < b ? a : b);
+      if (min < 1) min = 1;
+      if (min != _currentPage) {
+        if (mounted) setState(() => _currentPage = min);
+      }
+    } catch (_) {}
+  }
+
+  Widget _buildVerticalHeader() {
+    final int colorIndex = ((getValue("quranPageolorsIndex") ?? 0) is int) ? (getValue("quranPageolorsIndex") ?? 0) : 0;
+    String surahName = "";
+    try {
+      if (widget.jsonData != null && _currentPage >= 1 && _currentPage <= quran.totalPagesCount) {
+        final pd = quran.getPageData(_currentPage);
+        final sn = pd[0]["surah"] as int;
+        surahName = widget.jsonData[sn - 1]["name"].toString();
+      }
+    } catch (_) {}
+    return Container(
+      color: backgroundColors[colorIndex].withOpacity(0.97),
+      padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 2.h),
+      child: SafeArea(
+        bottom: false,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            IconButton(
+              onPressed: widget.onBack ?? () { if (Navigator.canPop(context)) Navigator.pop(context); },
+              icon: Icon(Icons.arrow_back_ios, size: 20.sp, color: secondaryColors[colorIndex]),
+            ),
+            Expanded(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (surahName.isNotEmpty)
+                    Text(surahName, maxLines: 1, overflow: TextOverflow.ellipsis, textAlign: TextAlign.center, style: TextStyle(color: secondaryColors[colorIndex], fontFamily: "Taha", fontSize: 12.sp)),
+                  Text("صفحة $_currentPage", style: TextStyle(color: secondaryColors[colorIndex].withOpacity(0.7), fontFamily: "cairo", fontSize: 9.sp)),
+                ],
+              ),
+            ),
+            IconButton(
+              onPressed: widget.onSettings ?? () {},
+              icon: Icon(Icons.settings, size: 22.sp, color: secondaryColors[colorIndex]),
+              tooltip: "إعدادات",
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   @override
@@ -495,6 +572,12 @@ class _QuranVerticalViewState extends State<QuranVerticalView> {
                 },
               );
             },
+          ),
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: _buildVerticalHeader(),
           ),
         ],
       ),

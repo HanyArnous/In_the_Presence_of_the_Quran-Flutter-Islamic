@@ -47,6 +47,11 @@ class DownloadAllSurahs extends PlayerBlocEvent {
 
 }
 
+class CancelDownload extends PlayerBlocEvent {
+  final String key;
+  CancelDownload(this.key);
+}
+
 class ClosePlayerEvent extends PlayerBlocEvent {}
 class PausePlayer extends PlayerBlocEvent {}
 

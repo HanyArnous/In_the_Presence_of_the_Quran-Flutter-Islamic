@@ -644,7 +644,12 @@ class _RecitersSurahListPageState extends State<RecitersSurahListPage> {
               //           color: Colors.white,
               //         )))
             ],
-            systemOverlayStyle: SystemUiOverlayStyle.light,
+            systemOverlayStyle: const SystemUiOverlayStyle(
+              statusBarColor: Colors.transparent,
+              systemNavigationBarColor: Colors.transparent,
+              statusBarIconBrightness: Brightness.light,
+              systemNavigationBarIconBrightness: Brightness.light,
+            ),
           ),
           body: Container(
             child: ListView.separated(
@@ -711,9 +716,10 @@ class _RecitersSurahListPageState extends State<RecitersSurahListPage> {
                         width: 25.w,
                       ),
                       trailing: SizedBox(
-                        width: 140.w,
+                        width: 165.w,
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.end,
+                          mainAxisSize: MainAxisSize.min,
                           children: [
                             // أيقونة التشغيل (تم حذف التكرار منها)
                             IconButton(
@@ -743,38 +749,92 @@ class _RecitersSurahListPageState extends State<RecitersSurahListPage> {
                               ),
                               color: blueColor,
                             ),
-                            // أيقونة التحميل (تم إصلاحها لتعمل مع المسارات الثلاثة)
-                            IconButton(
-                              onPressed: () async {
-                                if (isDownloaded) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(content: Text("السورة متوفرة أوفلاين بالفعل")),
+                            // أيقونة التحميل مع إظهار النسبة والمساحة أثناء التحميل
+                            ValueListenableBuilder<Map<String, double>>(
+                              valueListenable: PlayerBlocBloc.downloadProgress,
+                              builder: (context, progressMap, _) {
+                                final key = "${widget.reciter.name}-${widget.mushaf.id}-$sNum";
+                                final prog = progressMap[key];
+                                final isDownloading = prog != null && prog >= 0 && prog < 1;
+                                if (isDownloading) {
+                                  return ValueListenableBuilder<Map<String, String>>(
+                                    valueListenable: PlayerBlocBloc.downloadSizeInfo,
+                                    builder: (context, sizeMap, _) {
+                                      final info = sizeMap[key] ?? "${(prog * 100).toStringAsFixed(0)}%";
+                                      return SizedBox(
+                                        width: 75.w,
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Expanded(
+                                              child: Column(
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  Stack(
+                                                    alignment: Alignment.center,
+                                                    children: [
+                                                      SizedBox(
+                                                        width: 26.w,
+                                                        height: 26.w,
+                                                        child: CircularProgressIndicator(value: prog, strokeWidth: 2.2, color: orangeColor),
+                                                      ),
+                                                      Text("${(prog * 100).toStringAsFixed(0)}%", style: TextStyle(fontSize: 7.sp, fontFamily: "roboto", color: orangeColor, fontWeight: FontWeight.bold)),
+                                                    ],
+                                                  ),
+                                                  SizedBox(height: 1.h),
+                                                  Text(info, textAlign: TextAlign.center, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 6.5.sp, fontFamily: "roboto", color: Colors.grey[700])),
+                                                ],
+                                              ),
+                                            ),
+                                            SizedBox(width: 2.w),
+                                            InkWell(
+                                              onTap: () => playerPageBloc.add(CancelDownload(key)),
+                                              borderRadius: BorderRadius.circular(12.r),
+                                              child: Container(
+                                                padding: EdgeInsets.all(3.w),
+                                                decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.red.withOpacity(0.12)),
+                                                child: Icon(Icons.close, size: 14.sp, color: Colors.redAccent),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      );
+                                    },
                                   );
-                                } else {
-                                  bool? shouldDownload = await showDialog<bool>(
-                                    context: context,
-                                    builder: (context) => AlertDialog(
-                                      content: const Text("هل تود تحميل هذه السورة؟"),
-                                      actions: [
-                                        TextButton(onPressed: () => Navigator.pop(context, false), child: Text("cancel".tr())),
-                                        TextButton(onPressed: () => Navigator.pop(context, true), child: const Text("تنزيل")),
-                                      ],
-                                    ),
-                                  );
-                                  if (shouldDownload == true) {
-                                    playerPageBloc.add(DownloadSurah(
-                                        reciter: widget.reciter,
-                                        moshaf: widget.mushaf,
-                                        suraNumber: sNum,
-                                        url: "${widget.mushaf.server}/${sNum.padLeft(3, "0")}.mp3"));
-                                  }
                                 }
+                                return IconButton(
+                                  onPressed: () async {
+                                    if (isDownloaded) {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(content: Text("السورة متوفرة أوفلاين بالفعل")),
+                                      );
+                                    } else {
+                                      bool? shouldDownload = await showDialog<bool>(
+                                        context: context,
+                                        builder: (context) => AlertDialog(
+                                          content: const Text("هل تود تحميل هذه السورة؟", style: TextStyle(fontFamily: "cairo")),
+                                          actions: [
+                                            TextButton(onPressed: () => Navigator.pop(context, false), child: Text("cancel".tr())),
+                                            TextButton(onPressed: () => Navigator.pop(context, true), child: const Text("تنزيل", style: TextStyle(fontFamily: "cairo"))),
+                                          ],
+                                        ),
+                                      );
+                                      if (shouldDownload == true) {
+                                        playerPageBloc.add(DownloadSurah(
+                                            reciter: widget.reciter,
+                                            moshaf: widget.mushaf,
+                                            suraNumber: sNum,
+                                            url: "${widget.mushaf.server}/${sNum.padLeft(3, "0")}.mp3"));
+                                      }
+                                    }
+                                  },
+                                  icon: Icon(
+                                    isDownloaded ? Icons.download_done : Icons.download,
+                                    color: orangeColor,
+                                    size: 24.sp,
+                                  ),
+                                );
                               },
-                              icon: Icon(
-                                isDownloaded ? Icons.download_done : Icons.download,
-                                color: orangeColor,
-                                size: 24.sp,
-                              ),
                             ),
                             IconButton(
                               onPressed: () {

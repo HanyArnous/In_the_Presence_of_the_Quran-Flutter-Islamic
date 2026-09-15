@@ -91,5 +91,9 @@
     "nameOfBookmark": "Ona benzersiz bir ad ver",
     "color": "Yer İşareti Rengi",
     "saveBookmark": "Yer İşaretini Kaydet",
-    "Enter Custom Zikr": "Özel Zikr Girin"
+    "Enter Custom Zikr": "Özel Zikr Girin",
+    "khatma": "Hatme",
+    "backup": "Yedekleme",
+    "azan": "Ezan",
+    "prayer_settings": "Ezan Ayarlari"
 }

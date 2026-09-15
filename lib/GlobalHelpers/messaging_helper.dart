@@ -50,8 +50,9 @@ void callbackDispatcher() {
           await _showRandomAyahNotification();
           break;
         case "sallahEnable":
+          // إشعار الصلاة على النبي: قناة ذكر بدون زر إيقاف (قابل للإزالة ولا يطلق خدمة أمامية)
           await _showNotification(
-              _randomId(), "ذكر الله", "اللهم صلِ وسلم على نبينا محمد", "prayer_channel_v2");
+              _randomId(), "ذكر الله", "اللهم صلِ وسلم على نبينا محمد ﷺ", kZikrChannelId);
           break;
         case "hadithNot":
         case "hadithNotTest":

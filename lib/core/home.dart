@@ -1476,7 +1476,7 @@ class _HomeState extends State<Home>
                                                     imagePath:
                                                         "assets/images/azkar.png"),
                                                 SuperellipseButton(
-                                                    text: "ختمة",
+                                                    text: "khatma".tr(),
                                                     onPressed: () {
                                                       Navigator.push(
                                                           context,
@@ -1520,7 +1520,7 @@ class _HomeState extends State<Home>
                                                     imagePath:
                                                         "assets/images/statistics.png"),
                                                 SuperellipseButton(
-                                                    text: "الأذان",
+                                                    text: "azan".tr(),
                                                     onPressed: () {
                                                       Navigator.push(
                                                           context,
@@ -1543,7 +1543,7 @@ class _HomeState extends State<Home>
                                                     imagePath:
                                                         "assets/images/notifications.png"),
                                                 SuperellipseButton(
-                                                    text: "نسخ احتياطي",
+                                                    text: "backup".tr(),
                                                     onPressed: () {
                                                       Navigator.push(
                                                           context,

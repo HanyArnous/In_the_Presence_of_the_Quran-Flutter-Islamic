@@ -41,25 +41,29 @@ class AzanAlarmReceiver : BroadcastReceiver() {
     }
 }
 
-// ✅ إعادة جدولة منبهات الأذان بعد إعادة التشغيل (تُجدول من Flutter عند أول فتح)
+// ✅ إعادة جدولة منبهات الأذان بعد إعادة التشغيل
+// Android 15+: لا يبدأ أي خدمة أمامية من BOOT_COMPLETED ـ فقط يضع علامة ليُعيد Flutter الجدولة عند أول فتح (عبر AlarmManager، بدون FGS)
 class AzanBootReceiver : BroadcastReceiver() {
     companion object { const val TAG = "AzanBootReceiver" }
     override fun onReceive(context: Context, intent: Intent) {
+        val pending = goAsync()
         try {
             val a = intent.action
             if (a == Intent.ACTION_BOOT_COMPLETED ||
                 a == Intent.ACTION_MY_PACKAGE_REPLACED ||
-                a == "android.intent.action.QUICKBOOT_POWERON"
+                a == "android.intent.action.QUICKBOOT_POWERON" ||
+                a == "com.htc.intent.action.QUICKBOOT_POWERON"
             ) {
-                // علّم أن الجهاز أعاد التشغيل؛ سيعيد Flutter الجدولة عند الفتح.
-                // (منبهات flutter_local_notifications المجدولة تُستعاد تلقائياً عبر مستقبلها الخاص)
-                Log.d(TAG, "Boot completed - awaiting Flutter reschedule")
+                Log.d(TAG, "Boot completed - awaiting Flutter reschedule (no FGS)")
                 context.getSharedPreferences("azan_prefs", Context.MODE_PRIVATE).edit()
                     .putBoolean("needs_reschedule", true)
                     .apply()
+                // لا نستدعي startForegroundService هنا إطلاقاً لتوافق Android 15
             }
         } catch (e: Exception) {
             Log.e(TAG, "boot receiver failed: ${e.message}")
+        } finally {
+            try { pending.finish() } catch (_: Exception) {}
         }
     }
 }

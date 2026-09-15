@@ -369,7 +369,12 @@ class _RecitersPageState extends State<RecitersPage> {
               Entypo.logout,
               color: Colors.white,
             )),
-        systemOverlayStyle: SystemUiOverlayStyle.light,
+        systemOverlayStyle: const SystemUiOverlayStyle(
+          statusBarColor: Colors.transparent,
+          systemNavigationBarColor: Colors.transparent,
+          statusBarIconBrightness: Brightness.light,
+          systemNavigationBarIconBrightness: Brightness.light,
+        ),
         bottom: PreferredSize(
           preferredSize: Size(screenSize.width, screenSize.height * .1),
           child: Padding(

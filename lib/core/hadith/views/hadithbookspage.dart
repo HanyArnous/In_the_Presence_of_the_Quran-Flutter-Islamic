@@ -45,7 +45,20 @@ class _HadithBooksPageState extends State<HadithBooksPage> {
         sendTimeout: const Duration(seconds: 15),
       ));
       final SharedPreferences prefs = await SharedPreferences.getInstance();
-      if (prefs.getString("categories-$lang") == null) {
+      bool needFetch = false;
+      List<dynamic> cached = [];
+      final cachedStr = prefs.getString("categories-$lang");
+      if (cachedStr == null) {
+        needFetch = true;
+      } else {
+        try {
+          cached = json.decode(cachedStr) as List<dynamic>;
+          if (cached.isEmpty) needFetch = true;
+        } catch (_) {
+          needFetch = true;
+        }
+      }
+      if (needFetch) {
         Response response = await dio.get(
             "https://hadeethenc.com/api/v1/categories/roots/?language=$lang");
         final items = response.data is List ? response.data : [];
@@ -56,25 +69,13 @@ class _HadithBooksPageState extends State<HadithBooksPage> {
         }
         if (categories.length > 1) {
           await prefs.setString("categories-$lang", json.encode(items));
-        }
-      } else {
-        final jsonData = prefs.getString("categories-$lang");
-
-        if (jsonData != null) {
-          final data = json.decode(jsonData) as List<dynamic>;
-          for (var cat in data) {
+        } else {
+          // fallback: حاول لغة ar إذا فشلت الحالية
+          if (lang != "ar") {
             try {
-              categories.add(Category.fromJson(cat));
-            } catch (_) {}
-          }
-
-          if (lang == "ar") {
-            final english = RegExp(r'[a-zA-Z]');
-            final hasEnglishTitles =
-                categories.any((c) => english.hasMatch(c.title));
-            if (hasEnglishTitles) {
-              Response response = await dio.get(
+              Response r2 = await dio.get(
                   "https://hadeethenc.com/api/v1/categories/roots/?language=ar");
+              final items2 = r2.data is List ? r2.data : [];
               categories = [
                 Category(
                     id: "100000",
@@ -82,19 +83,74 @@ class _HadithBooksPageState extends State<HadithBooksPage> {
                     hadeethsCount: "2000+",
                     parentId: "parentId")
               ];
-              final items =
-                  response.data is List ? response.data : [];
+              for (var cat in items2) {
+                try {
+                  categories.add(Category.fromJson(cat));
+                } catch (_) {}
+              }
+              if (categories.length > 1) {
+                await prefs.setString("categories-ar", json.encode(items2));
+              }
+            } catch (_) {}
+          }
+        }
+      } else {
+        for (var cat in cached) {
+          try {
+            categories.add(Category.fromJson(cat));
+          } catch (_) {}
+        }
+        if (lang == "ar") {
+          final english = RegExp(r'[a-zA-Z]');
+          final hasEnglishTitles =
+              categories.any((c) => english.hasMatch(c.title));
+          if (hasEnglishTitles) {
+            Response response = await dio.get(
+                "https://hadeethenc.com/api/v1/categories/roots/?language=ar");
+            categories = [
+              Category(
+                  id: "100000",
+                  title: "allHadith".tr(),
+                  hadeethsCount: "2000+",
+                  parentId: "parentId")
+            ];
+            final items =
+                response.data is List ? response.data : [];
+            for (var cat in items) {
+              try {
+                categories.add(Category.fromJson(cat));
+              } catch (_) {}
+            }
+            if (categories.length > 1) {
+              await prefs.setString(
+                  "categories-$lang", json.encode(items));
+            }
+          }
+        }
+        // إذا الكاش فاسد (مثلاً [] أو عنصر واحد فقط) أعد الجلب مرة
+        if (categories.length <= 1) {
+          try {
+            Response response = await dio.get(
+                "https://hadeethenc.com/api/v1/categories/roots/?language=$lang");
+            final items = response.data is List ? response.data : [];
+            if (items.isNotEmpty) {
+              categories = [
+                Category(
+                    id: "100000",
+                    title: "allHadith".tr(),
+                    hadeethsCount: "2000+",
+                    parentId: "parentId")
+              ];
               for (var cat in items) {
                 try {
                   categories.add(Category.fromJson(cat));
                 } catch (_) {}
               }
               if (categories.length > 1) {
-                await prefs.setString(
-                    "categories-$lang", json.encode(items));
+                await prefs.setString("categories-$lang", json.encode(items));
               }
             }
-          }
+          } catch (_) {}
         }
       }
       // أول عنصر هو "كل الأحاديث" — إن لم تُجلب تصنيفات حقيقية فالصفحة فارغة
@@ -205,9 +261,7 @@ class _HadithBooksPageState extends State<HadithBooksPage> {
       body: SafeArea(bottom: true, child: isLoading
           ? Center(
               child: CircularProgressIndicator(
-                color: getValue("darkMode")
-                    ? quranPagesColorDark
-                    : quranPagesColorLight,
+                color: getValue("darkMode") ? Colors.white70 : blueColor,
               ),
             )
           : (errorMessage != null && categories.length <= 1)

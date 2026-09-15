@@ -51,29 +51,79 @@ class _ZikrPageState extends State<ZikrPage> {
       }
     });
     _loadCustomAzkar();
-    if (getValue("${widget.zikr.category}zikrIndex") == null) {
-      updateValue("${widget.zikr.category}zikrIndex", 0);
+    if (getValue("${widget.zikr.id}zikrIndex") == null) {
+      updateValue("${widget.zikr.id}zikrIndex", 0);
     }
-    final idx = getValue("${widget.zikr.category}zikrIndex");
-    count = getValue("${widget.zikr.category}-$idx-count") ?? 0;
+    final idx = getValue("${widget.zikr.id}zikrIndex");
+    count = getValue("${widget.zikr.id}-$idx-count") ?? 0;
 
     // Use default count from azkar data if no user-defined max
-    currentMax = getValue("${widget.zikr.category}-$idx-max");
+    currentMax = getValue("${widget.zikr.id}-$idx-max");
     if (currentMax == null && widget.zikr.array.isNotEmpty) {
       final defaultCount = widget.zikr.array[idx].count;
       currentMax = defaultCount;
-      updateValue("${widget.zikr.category}-$idx-max", defaultCount);
+      updateValue("${widget.zikr.id}-$idx-max", defaultCount);
     }
   }
 
+  void _migrateCategoryKeysIfNeeded() {
+    try {
+      final oldCat = widget.zikr.category;
+      final newId = widget.zikr.id.toString();
+      if (oldCat == newId) return;
+      // customAzkar
+      if (getValue("customAzkar_$newId") == null) {
+        final old = getValue("customAzkar_$oldCat");
+        if (old != null) updateValue("customAzkar_$newId", old);
+      }
+      // favorites
+      if (getValue("favorites_$newId") == null) {
+        final old = getValue("favorites_$oldCat");
+        if (old != null) updateValue("favorites_$newId", old);
+      }
+      if (getValue("favorites_filter_$newId") == null) {
+        final old = getValue("favorites_filter_$oldCat");
+        if (old != null) updateValue("favorites_filter_$newId", old);
+      }
+      // overrides
+      for (final o in widget.zikr.array) {
+        final newKey = "override_${newId}_${o.id}";
+        if (getValue(newKey) == null) {
+          final oldKey = "override_${oldCat}_${o.id}";
+          final old = getValue(oldKey);
+          if (old != null) updateValue(newKey, old);
+        }
+      }
+      // zikrIndex
+      if (getValue("${newId}zikrIndex") == null) {
+        final old = getValue("${oldCat}zikrIndex");
+        if (old != null) updateValue("${newId}zikrIndex", old);
+      }
+      // counters per index (حتى 300 عنصر)
+      for (int i = 0; i < 300; i++) {
+        final nc = "${newId}-$i-count";
+        if (getValue(nc) == null) {
+          final oc = getValue("${oldCat}-$i-count");
+          if (oc != null) updateValue(nc, oc);
+        }
+        final nm = "${newId}-$i-max";
+        if (getValue(nm) == null) {
+          final om = getValue("${oldCat}-$i-max");
+          if (om != null) updateValue(nm, om);
+        }
+      }
+    } catch (_) {}
+  }
+
   void _loadCustomAzkar() {
-    final saved = getValue("customAzkar_${widget.zikr.category}");
+    _migrateCategoryKeysIfNeeded();
+    final saved = getValue("customAzkar_${widget.zikr.id}");
     if (saved != null) {
       final List<dynamic> jsonList = json.decode(saved);
       customAzkar = jsonList.map((item) => DuaItem.fromJson(item)).toList();
     }
     // تحميل المفضلة
-    final favSaved = getValue("favorites_${widget.zikr.category}");
+    final favSaved = getValue("favorites_${widget.zikr.id}");
     if (favSaved != null) {
       try {
         final List<dynamic> favList = json.decode(favSaved);
@@ -81,16 +131,16 @@ class _ZikrPageState extends State<ZikrPage> {
       } catch (_) {}
     }
     _showFavoritesOnly =
-        getValue("favorites_filter_${widget.zikr.category}") == true;
+        getValue("favorites_filter_${widget.zikr.id}") == true;
     if (_showFavoritesOnly && _favoriteIds.isEmpty) {
       _showFavoritesOnly = false;
-      updateValue("favorites_filter_${widget.zikr.category}", false);
+      updateValue("favorites_filter_${widget.zikr.id}", false);
     }
 
     // تحميل تعديلات النصوص/الأعداد إن وجدت
     _overridesCache.clear();
     for (final original in widget.zikr.array) {
-      final key = "override_${widget.zikr.category}_${original.id}";
+      final key = "override_${widget.zikr.id}_${original.id}";
       final raw = getValue(key);
       if (raw is String && raw.isNotEmpty) {
         try {
@@ -99,9 +149,9 @@ class _ZikrPageState extends State<ZikrPage> {
         } catch (_) {}
       }
     }
-    final currentIndex = getValue("${widget.zikr.category}zikrIndex") ?? 0;
+    final currentIndex = getValue("${widget.zikr.id}zikrIndex") ?? 0;
     if (_allAzkar.isNotEmpty && currentIndex >= _allAzkar.length) {
-      updateValue("${widget.zikr.category}zikrIndex", 0);
+      updateValue("${widget.zikr.id}zikrIndex", 0);
     }
   }
 
@@ -115,7 +165,7 @@ class _ZikrPageState extends State<ZikrPage> {
               'filename': item.filename,
             })
         .toList();
-    updateValue("customAzkar_${widget.zikr.category}", json.encode(jsonList));
+    updateValue("customAzkar_${widget.zikr.id}", json.encode(jsonList));
   }
 
   void _addCustomZikr(String text,
@@ -135,7 +185,7 @@ class _ZikrPageState extends State<ZikrPage> {
 
       // إذا كان هذا أول ذكر يتم إضافته، نقوم بتهيئة العدادات
       if (_allAzkar.length == 1) {
-        updateValue("${widget.zikr.category}zikrIndex", 0);
+        updateValue("${widget.zikr.id}zikrIndex", 0);
         _loadCountersForIndex(0);
       }
     });
@@ -143,11 +193,11 @@ class _ZikrPageState extends State<ZikrPage> {
   }
 
   void _editCurrentZikr(String newText, int? newCount) {
-    final idx = getValue("${widget.zikr.category}zikrIndex") ?? 0;
+    final idx = getValue("${widget.zikr.id}zikrIndex") ?? 0;
     setState(() {
       if (idx < widget.zikr.array.length) {
         final original = widget.zikr.array[idx];
-        final key = "override_${widget.zikr.category}_${original.id}";
+        final key = "override_${widget.zikr.id}_${original.id}";
         final data = json.encode({
           "text": newText,
           "count": newCount ?? original.count,
@@ -199,7 +249,7 @@ class _ZikrPageState extends State<ZikrPage> {
     }
 
     // Reset to first zikr
-    updateValue("${widget.zikr.category}zikrIndex", 0);
+    updateValue("${widget.zikr.id}zikrIndex", 0);
     _loadCountersForIndex(0);
     setState(() {});
   }
@@ -238,7 +288,7 @@ class _ZikrPageState extends State<ZikrPage> {
   }
 
   void _toggleFavoriteForCurrent() {
-    final idx = getValue("${widget.zikr.category}zikrIndex") ?? 0;
+    final idx = getValue("${widget.zikr.id}zikrIndex") ?? 0;
     if (idx < 0 || idx >= _allAzkar.length) return;
     final id = _allAzkar[idx].id;
     if (_favoriteIds.contains(id)) {
@@ -246,7 +296,7 @@ class _ZikrPageState extends State<ZikrPage> {
     } else {
       _favoriteIds.add(id);
     }
-    updateValue("favorites_${widget.zikr.category}",
+    updateValue("favorites_${widget.zikr.id}",
         json.encode(_favoriteIds.toList()));
     setState(() {});
   }
@@ -255,14 +305,14 @@ class _ZikrPageState extends State<ZikrPage> {
     setState(() {
       _showFavoritesOnly = !_showFavoritesOnly;
       updateValue(
-          "favorites_filter_${widget.zikr.category}", _showFavoritesOnly);
+          "favorites_filter_${widget.zikr.id}", _showFavoritesOnly);
       if (_showFavoritesOnly && _favoriteIds.isEmpty) {
         _showFavoritesOnly = false;
         updateValue(
-            "favorites_filter_${widget.zikr.category}", _showFavoritesOnly);
+            "favorites_filter_${widget.zikr.id}", _showFavoritesOnly);
         Fluttertoast.showToast(msg: "لا توجد أذكار مفضلة حالياً");
       }
-      updateValue("${widget.zikr.category}zikrIndex", 0);
+      updateValue("${widget.zikr.id}zikrIndex", 0);
       _loadCountersForIndex(0);
     });
   }
@@ -282,7 +332,7 @@ class _ZikrPageState extends State<ZikrPage> {
   }
 
   int get _safeIndex {
-    final idx = getValue("${widget.zikr.category}zikrIndex") ?? 0;
+    final idx = getValue("${widget.zikr.id}zikrIndex") ?? 0;
     if (_allAzkar.isEmpty) return 0;
     if (idx < 0 || idx >= _allAzkar.length) return 0;
     return idx;
@@ -292,8 +342,8 @@ class _ZikrPageState extends State<ZikrPage> {
     // التأكد من أن الفهرس صالح
     if (idx < 0 || idx >= _allAzkar.length) return;
 
-    count = getValue("${widget.zikr.category}-$idx-count") ?? 0;
-    currentMax = getValue("${widget.zikr.category}-$idx-max");
+    count = getValue("${widget.zikr.id}-$idx-count") ?? 0;
+    currentMax = getValue("${widget.zikr.id}-$idx-max");
 
     // إذا لم يحدد المستخدم حداً أقصى، نعود للقيمة الافتراضية
     if (currentMax == null) {
@@ -308,12 +358,12 @@ class _ZikrPageState extends State<ZikrPage> {
       return _buildEmptyState();
     }
 
-    int storedIndex = getValue("${widget.zikr.category}zikrIndex") ?? 0;
+    int storedIndex = getValue("${widget.zikr.id}zikrIndex") ?? 0;
     if (storedIndex >= activeList.length || storedIndex < 0) {
       storedIndex = 0;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
-          updateValue("${widget.zikr.category}zikrIndex", 0);
+          updateValue("${widget.zikr.id}zikrIndex", 0);
           _loadCountersForIndex(0);
           setState(() {});
         }
@@ -325,13 +375,13 @@ class _ZikrPageState extends State<ZikrPage> {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
           if (firstFav != null) {
-            updateValue("${widget.zikr.category}zikrIndex", firstFav);
+            updateValue("${widget.zikr.id}zikrIndex", firstFav);
             _loadCountersForIndex(firstFav);
             setState(() {});
           } else {
             _showFavoritesOnly = false;
-            updateValue("favorites_filter_${widget.zikr.category}", false);
-            updateValue("${widget.zikr.category}zikrIndex", 0);
+            updateValue("favorites_filter_${widget.zikr.id}", false);
+            updateValue("${widget.zikr.id}zikrIndex", 0);
             _loadCountersForIndex(0);
             setState(() {});
           }
@@ -639,7 +689,7 @@ class _ZikrPageState extends State<ZikrPage> {
         ),
         IconButton(
             onPressed: () {
-              updateValue("${widget.zikr.category}-$safeIndex-count", 0);
+              updateValue("${widget.zikr.id}-$safeIndex-count", 0);
               count = 0;
               setState(() {});
             },
@@ -661,7 +711,7 @@ class _ZikrPageState extends State<ZikrPage> {
         borderRadius: BorderRadius.circular(200),
         onTap: () async {
           final idx = safeIndex;
-          final savedMax = getValue("${widget.zikr.category}-$idx-max");
+          final savedMax = getValue("${widget.zikr.id}-$idx-max");
           HapticFeedback.selectionClick();
 
           // Play sound if enabled
@@ -673,7 +723,7 @@ class _ZikrPageState extends State<ZikrPage> {
             final maxInt = savedMax as int;
             if (count >= maxInt) {
               count = maxInt;
-              updateValue("${widget.zikr.category}-$idx-count", maxInt);
+              updateValue("${widget.zikr.id}-$idx-count", maxInt);
               HapticFeedback.heavyImpact();
               if (_tapSoundEnabled) _playTapSound();
               if (_allAzkar.length <= 1) {
@@ -683,8 +733,8 @@ class _ZikrPageState extends State<ZikrPage> {
               }
               if (idx + 1 < _allAzkar.length) {
                 final newIdx = idx + 1;
-                updateValue("${widget.zikr.category}zikrIndex", newIdx);
-                updateValue("${widget.zikr.category}-$newIdx-count", 0);
+                updateValue("${widget.zikr.id}zikrIndex", newIdx);
+                updateValue("${widget.zikr.id}-$newIdx-count", 0);
                 _loadCountersForIndex(newIdx);
                 if (_tapSoundEnabled) {
                   Future.delayed(const Duration(milliseconds: 100), () => _playTapSound());
@@ -693,7 +743,7 @@ class _ZikrPageState extends State<ZikrPage> {
                 // آخر ذكر في القائمة - إعادة للبداية مع تنبيه
                 HapticFeedback.heavyImpact();
                 if (_tapSoundEnabled) _playTapSound();
-                updateValue("${widget.zikr.category}zikrIndex", 0);
+                updateValue("${widget.zikr.id}zikrIndex", 0);
                 _loadCountersForIndex(0);
               }
               setState(() {});
@@ -704,8 +754,8 @@ class _ZikrPageState extends State<ZikrPage> {
           } else {
             count++;
           }
-          updateValue("${widget.zikr.category}-$idx-count", count);
-          _updateAzkarStats(widget.zikr.category, idx, 1);
+          updateValue("${widget.zikr.id}-$idx-count", count);
+          _updateAzkarStats(widget.zikr.id.toString(), idx, 1);
 
           // إذا وصل للحد بعد الزيادة، انتقل تلقائيا
           final effectiveMax = savedMax as int? ?? currentMax ?? _allAzkar[idx].count;
@@ -718,12 +768,12 @@ class _ZikrPageState extends State<ZikrPage> {
               Future.delayed(const Duration(milliseconds: 300), () {
                 if (!mounted) return;
                 if (idx + 1 < _allAzkar.length) {
-                  updateValue("${widget.zikr.category}zikrIndex", idx + 1);
-                  updateValue("${widget.zikr.category}-${idx + 1}-count", 0);
+                  updateValue("${widget.zikr.id}zikrIndex", idx + 1);
+                  updateValue("${widget.zikr.id}-${idx + 1}-count", 0);
                   _loadCountersForIndex(idx + 1);
                   setState(() {});
                 } else {
-                  updateValue("${widget.zikr.category}zikrIndex", 0);
+                  updateValue("${widget.zikr.id}zikrIndex", 0);
                   _loadCountersForIndex(0);
                   setState(() {});
                 }
@@ -759,7 +809,7 @@ class _ZikrPageState extends State<ZikrPage> {
       onTap: () async {
         final idx = safeIndex;
         _maxController.text =
-            (getValue("${widget.zikr.category}-$idx-max") ?? "").toString();
+            (getValue("${widget.zikr.id}-$idx-max") ?? "").toString();
         await showDialog(
             context: context,
             builder: (c) {
@@ -804,10 +854,10 @@ class _ZikrPageState extends State<ZikrPage> {
                         final idx = safeIndex;
                         if (parsed != null && parsed >= 0) {
                           updateValue(
-                              "${widget.zikr.category}-$idx-max", parsed);
+                              "${widget.zikr.id}-$idx-max", parsed);
                           currentMax = parsed;
                         } else {
-                          updateValue("${widget.zikr.category}-$idx-max", null);
+                          updateValue("${widget.zikr.id}-$idx-max", null);
                           currentMax = null;
                         }
                         setState(() {});
@@ -858,7 +908,7 @@ class _ZikrPageState extends State<ZikrPage> {
             if (targetIdx != null) {
               // ✅ 2. تحديث الحالة فوراً لتغيير النص والعداد
               setState(() {
-                updateValue("${widget.zikr.category}zikrIndex", targetIdx);
+                updateValue("${widget.zikr.id}zikrIndex", targetIdx);
                 _loadCountersForIndex(targetIdx!);
               });
             }
@@ -886,7 +936,7 @@ class _ZikrPageState extends State<ZikrPage> {
             if (targetIdx != null) {
               // ✅ 3. تحديث الحالة فوراً لتغيير النص والعداد
               setState(() {
-                updateValue("${widget.zikr.category}zikrIndex", targetIdx);
+                updateValue("${widget.zikr.id}zikrIndex", targetIdx);
                 _loadCountersForIndex(targetIdx!);
               });
             }
@@ -999,15 +1049,15 @@ class _ZikrPageState extends State<ZikrPage> {
 
   void _dailyReset() {
     for (int i = 0; i < _allAzkar.length; i++) {
-      updateValue("${widget.zikr.category}-$i-count", 0);
+      updateValue("${widget.zikr.id}-$i-count", 0);
     }
-    updateValue("${widget.zikr.category}zikrIndex", 0);
+    updateValue("${widget.zikr.id}zikrIndex", 0);
     _loadCountersForIndex(0);
     setState(() {});
   }
 
   Future<void> _editCurrentZikrDialog() async {
-    final idx = getValue("${widget.zikr.category}zikrIndex");
+    final idx = getValue("${widget.zikr.id}zikrIndex");
     if (idx < 0 || idx >= _allAzkar.length) return;
     final zikr = _allAzkar[idx];
     final controller = TextEditingController(text: zikr.text);

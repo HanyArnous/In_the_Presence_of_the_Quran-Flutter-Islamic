@@ -2,8 +2,11 @@ package com.hanyarnous.quranpresence
 
 import android.content.Context
 import android.content.Intent
+import android.graphics.Color
 import android.os.Build
+import android.os.Bundle
 import android.util.Log
+import androidx.core.view.WindowCompat
 import com.ryanheise.audioservice.AudioServiceActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
@@ -11,6 +14,24 @@ import io.flutter.plugin.common.MethodChannel
 // ✅ هذه الـ Activity يجب أن ترث من AudioServiceActivity عند استخدام just_audio_background/audio_service
 //   حتى يتمكن الـ plugin من الحصول على FlutterEngine الصحيح للتحكم في مشغّل الصوت بالخلفية.
 class MainActivity : AudioServiceActivity() {
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        // Android 15+ Edge-to-Edge الحديث: لا نستخدم APIs المتوقفة (FLAG_TRANSLUCENT_*)
+        // WindowCompat.setDecorFitsSystemWindows هو الـ API الموصى به ويدعمه Flutter
+        try {
+            WindowCompat.setDecorFitsSystemWindows(window, false)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                window.statusBarColor = Color.TRANSPARENT
+                window.navigationBarColor = Color.TRANSPARENT
+            }
+            // الألوان الفاتحة للأيقونات (للثيم الداكن يمكن تعديلها)
+            WindowCompat.getInsetsController(window, window.decorView)?.apply {
+                isAppearanceLightStatusBars = false
+                isAppearanceLightNavigationBars = false
+            }
+        } catch (_: Exception) {}
+        super.onCreate(savedInstanceState)
+    }
 
     companion object {
         const val AZAN_CHANNEL = "com.hanyarnous.quranpresence/azan"

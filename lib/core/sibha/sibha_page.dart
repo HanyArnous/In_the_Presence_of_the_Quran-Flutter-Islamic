@@ -148,12 +148,13 @@ class _SibhaPageState extends State<SibhaPage> {
 
   void _initializeCurrentMax() {
     final lastIndex = getValue("tasbeehLastIndex") ?? 0;
-    currentMax = getValue("${lastIndex}max");
+    final safeIdx = (lastIndex >= 0 && lastIndex < tasbeehList.length) ? lastIndex : 0;
+    currentMax = _getMaxWithFallback(safeIdx);
 
     // التأكد من تحديث currentMax بشكل صحيح
     if (currentMax == null) {
       // إذا لم يوجد max محفوظ، استخدم القيمة الافتراضية
-      currentMax = tasbeehList[lastIndex].defaultCount;
+      currentMax = tasbeehList[safeIdx].defaultCount;
     }
 
     // فرض تحديث الواجهة لضمان عمل السبحات
@@ -177,6 +178,8 @@ class _SibhaPageState extends State<SibhaPage> {
 
   void _dailyReset() {
     for (int i = 0; i < tasbeehList.length; i++) {
+      updateValue(_countKey(i), 0);
+      // تنظيف المفتاح القديم
       updateValue("${i}number", 0);
     }
     updateValue("tasbeehLastIndex", 0);
@@ -199,6 +202,30 @@ class _SibhaPageState extends State<SibhaPage> {
   void persistAllTasbeehs() {
     final list = tasbeehList.map((t) => t.toJson()).toList();
     updateValue("tasbeehAll", json.encode(list));
+  }
+
+  // مفاتيح ثابتة بالـ ID بدل الـ index لضمان الحفظ بعد الحذف/الإضافة
+  String _countKey(int idx) => idx >= 0 && idx < tasbeehList.length ? "${tasbeehList[idx].id}number" : "${idx}number";
+  String _maxKey(int idx) => idx >= 0 && idx < tasbeehList.length ? "${tasbeehList[idx].id}max" : "${idx}max";
+  dynamic _getCountWithFallback(int idx) {
+    final v = getValue(_countKey(idx));
+    if (v != null) return v;
+    final old = getValue("${idx}number");
+    if (old != null) {
+      updateValue(_countKey(idx), old);
+      return old;
+    }
+    return 0;
+  }
+  dynamic _getMaxWithFallback(int idx) {
+    final v = getValue(_maxKey(idx));
+    if (v != null) return v;
+    final old = getValue("${idx}max");
+    if (old != null) {
+      updateValue(_maxKey(idx), old);
+      return old;
+    }
+    return null;
   }
 
   customTasbeehFetcher() {
@@ -298,7 +325,7 @@ class _SibhaPageState extends State<SibhaPage> {
       _initializeCurrentMax();
 
       // إعادة تعيين عداد الذكر الجديد
-      updateValue("${nextIndex}number", 0);
+      updateValue(_countKey(nextIndex), 0);
     } else {
       // إذا كان هذا آخر ذكر، ارجع للأول
       tasbeehScrollController.animateToPage(
@@ -308,7 +335,7 @@ class _SibhaPageState extends State<SibhaPage> {
       );
       updateValue("tasbeehLastIndex", 0);
       _initializeCurrentMax();
-      updateValue("0number", 0);
+      updateValue(_countKey(0), 0);
     }
   }
 
@@ -604,8 +631,8 @@ class _SibhaPageState extends State<SibhaPage> {
                       splashColor: Colors.transparent,
                       highlightColor: Colors.transparent,
                       onTap: () {
-                        updateValue(
-                            "${getValue("tasbeehLastIndex")}number", (0));
+                        final rIdx = getValue("tasbeehLastIndex") ?? 0;
+                        updateValue(_countKey(rIdx), 0);
                         setState(() {});
                       },
                       child: SizedBox(
@@ -654,8 +681,9 @@ class _SibhaPageState extends State<SibhaPage> {
                 padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
                 child: InkWell(
                   onTap: () async {
+                    final _idx = getValue("tasbeehLastIndex") ?? 0;
                     maxController.text =
-                        (getValue("${getValue("tasbeehLastIndex")}max") ?? "")
+                        (_getMaxWithFallback(_idx) ?? "")
                             .toString();
                     await showDialog(
                         context: context,
@@ -709,14 +737,15 @@ class _SibhaPageState extends State<SibhaPage> {
                                   onPressed: () {
                                     final parsed =
                                         int.tryParse(maxController.text.trim());
+                                    final _sIdx = getValue("tasbeehLastIndex") ?? 0;
                                     if (parsed != null && parsed >= 0) {
                                       updateValue(
-                                          "${getValue("tasbeehLastIndex")}max",
+                                          _maxKey(_sIdx),
                                           parsed);
                                       currentMax = parsed;
                                     } else {
                                       updateValue(
-                                          "${getValue("tasbeehLastIndex")}max",
+                                          _maxKey(_sIdx),
                                           null);
                                       currentMax = null;
                                     }
@@ -756,10 +785,11 @@ class _SibhaPageState extends State<SibhaPage> {
                     highlightColor: Colors.white.withValues(alpha: .1),
                     borderRadius: BorderRadius.circular(200),
                     onTap: () async {
-                      final idx = getValue("tasbeehLastIndex");
-                      final current = (getValue("${idx}number") ?? 0) as int;
-                      final maxVal = getValue("${idx}max");
-                      final currentTasbeeh = tasbeehList[idx];
+                      final idx = getValue("tasbeehLastIndex") ?? 0;
+                      final safeIdx = (idx >=0 && idx < tasbeehList.length) ? idx : 0;
+                      final current = (_getCountWithFallback(safeIdx) ?? 0) as int;
+                      final maxVal = _getMaxWithFallback(safeIdx);
+                      final currentTasbeeh = tasbeehList[safeIdx];
 
                       HapticFeedback.selectionClick();
 
@@ -773,7 +803,7 @@ class _SibhaPageState extends State<SibhaPage> {
                         maxInt = maxVal as int;
                       } else {
                         maxInt = currentTasbeeh.defaultCount ?? 33;
-                        updateValue("${idx}max", maxInt);
+                        updateValue(_maxKey(safeIdx), maxInt);
                       }
 
                       if (current >= maxInt) {
@@ -789,7 +819,7 @@ class _SibhaPageState extends State<SibhaPage> {
                         return;
                       }
                       final next = current + 1;
-                      updateValue("${idx}number", next);
+                      updateValue(_countKey(safeIdx), next);
 
                       final dateKey =
                           DateFormat('yyyy-MM-dd').format(DateTime.now());
@@ -819,7 +849,7 @@ class _SibhaPageState extends State<SibhaPage> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Text(
-                              "${getValue("${getValue("tasbeehLastIndex")}number") ?? 0}${currentMax != null ? " / $currentMax" : ""}",
+                              "${_getCountWithFallback(getValue("tasbeehLastIndex") ?? 0) ?? 0}${currentMax != null ? " / $currentMax" : ""}",
                               style: TextStyle(
                                   color: Colors.white,
                                   fontSize: 50.sp,

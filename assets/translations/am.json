@@ -56,7 +56,6 @@
     "zikrNotification": "የእይል ማስታወቂያዎች",
     "zikrNotificationDetails": "ትልቁ ባለምልልስ በዚያ አገልግሎት በማስታወቂያ ላይ እንዴት ማቅረብ",
     "zikrNotificationDetails2": "ማሳወቂያ በዘፈቀደ መጠቀስ ይመጣል",
-
     "allReciters": "ሁሉም ዘገበዋይ",
     "searchreciters": "የዘገበዋይ ተወዳዳሪዎች ፍጠር",
     "searchBysura": "የሱሪ ቅዳሴ ፍጠር",
@@ -92,5 +91,9 @@
     "newBookmark": "አዲስ መገልገያ መጨመር",
     "nameOfBookmark": "የተለያዩ ስም ይምረጡ",
     "color": "የመገልገያ ቀለም",
-    "saveBookmark": "መገልገያ አስቀምጥ"
+    "saveBookmark": "መገልገያ አስቀምጥ",
+    "khatma": "ኀትማ",
+    "backup": "ምትኬ",
+    "azan": "አዛን",
+    "prayer_settings": "የአዛን ቅንብሮች"
 }

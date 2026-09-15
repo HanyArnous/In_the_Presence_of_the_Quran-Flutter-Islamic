@@ -1,9 +1,11 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:nabd/GlobalHelpers/hive_helper.dart';
 import 'package:nabd/core/prayer/azan_alert_page.dart';
 import 'package:nabd/core/prayer/azan_native_bridge.dart';
 import 'package:nabd/core/prayer/prayer_service.dart';
+import 'package:nabd/core/prayer/prayer_manual_table_page.dart';
 
 class PrayerSettingsPage extends StatefulWidget {
   const PrayerSettingsPage({super.key});
@@ -73,7 +75,7 @@ class _PrayerSettingsPageState extends State<PrayerSettingsPage> {
         : (hasCoords ? "موقعي الحالي" : "غير محدد");
     return Scaffold(
       appBar: AppBar(
-        title: const Text("إعدادات الأذان", style: TextStyle(fontFamily: "cairo")),
+        title: Text("prayer_settings".tr(), style: const TextStyle(fontFamily: "cairo")),
         backgroundColor: const Color(0xff6B8E4E),
         foregroundColor: Colors.white,
       ),
@@ -106,6 +108,22 @@ class _PrayerSettingsPageState extends State<PrayerSettingsPage> {
                 // عند الفشل يعرض fetchAndSaveLocation سبباً محدداً — لا نعيد الجدولة
                 setState(() {});
               }, child: const Text("تحديث")),
+            ),
+          ),
+          SizedBox(height: 12.h),
+          // شاشة جدول مواقيت الصلاة حسب البلد/المحافظة المختارة يدوياً
+          Card(
+            color: const Color(0xff6B8E4E).withOpacity(0.07),
+            child: ListTile(
+              leading: Container(
+                padding: EdgeInsets.all(8.w),
+                decoration: BoxDecoration(color: const Color(0xff6B8E4E).withOpacity(0.12), borderRadius: BorderRadius.circular(8.r)),
+                child: const Icon(Icons.table_chart, color: Color(0xff6B8E4E)),
+              ),
+              title: const Text("جدول مواقيت الصلاة", style: TextStyle(fontFamily: "cairo", fontWeight: FontWeight.bold, fontSize: 14)),
+              subtitle: const Text("حسب البلد أو المحافظة المختارة يدوياً", style: TextStyle(fontFamily: "cairo", fontSize: 11)),
+              trailing: const Icon(Icons.arrow_forward_ios, size: 16, color: Color(0xff6B8E4E)),
+              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PrayerManualTablePage())),
             ),
           ),
           SizedBox(height: 12.h),

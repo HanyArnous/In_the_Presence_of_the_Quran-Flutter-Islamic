@@ -31,7 +31,8 @@ void callbackDispatcher() {
           await _showRandomZikr();
           break;
         case "sallahEnable":
-          await _showNotification(_randId(), "ذكر الله", "اللهم صلِ وسلم على نبينا محمد", 'prayer_channel');
+          // تم توحيد القناة مع messaging_helper: ذكر بدون زر إيقاف وغير دائم
+          await _showNotification(_randId(), "ذكر الله", "اللهم صلِ وسلم على نبينا محمد ﷺ", 'zikr_channel_v2');
           break;
         case "sallahDisable":
           break;

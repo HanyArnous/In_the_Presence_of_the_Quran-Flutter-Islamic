@@ -91,5 +91,9 @@
     "newBookmark": "Adicionar Novo Marcador",
     "nameOfBookmark": "Dê a ele um nome único",
     "color": "Cor do Marcador",
-    "saveBookmark": "Salvar Marcador"
+    "saveBookmark": "Salvar Marcador",
+    "khatma": "Khatma",
+    "backup": "Cópia de Segurança",
+    "azan": "Azan",
+    "prayer_settings": "Configurações do Azan"
 }

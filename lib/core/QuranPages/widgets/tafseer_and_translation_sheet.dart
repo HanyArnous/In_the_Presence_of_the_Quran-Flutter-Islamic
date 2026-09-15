@@ -263,20 +263,22 @@ class _TafseerAndTranslateSheetState extends State<TafseerAndTranslateSheet> {
                                               child: Padding(
                                                 padding: EdgeInsets.symmetric(
                                                     horizontal: 18.0.w,
-                                                    vertical: 2.h),
+                                                    vertical: 6.h),
                                                 child: Row(
-                                                  mainAxisAlignment:
-                                                      MainAxisAlignment
-                                                          .spaceBetween,
                                                   children: [
-                                                    Text(
-                                                      translationDataList[i]
-                                                          .typeTextInRelatedLanguage,
-                                                      style: TextStyle(
-                                                          color: primaryColor
-                                                              .withOpacity(.9),
-                                                          fontSize: 14.sp),
+                                                    Expanded(
+                                                      child: Text(
+                                                        translationDataList[i]
+                                                            .typeTextInRelatedLanguage,
+                                                        style: TextStyle(
+                                                            color: primaryColor
+                                                                .withOpacity(.9),
+                                                            fontSize: 13.sp),
+                                                        overflow: TextOverflow.ellipsis,
+                                                        maxLines: 1,
+                                                      ),
                                                     ),
+                                                    SizedBox(width: 10.w),
                                                     isDownloading !=
                                                             translationDataList[
                                                                     i]
@@ -293,10 +295,13 @@ class _TafseerAndTranslateSheetState extends State<TafseerAndTranslateSheet> {
                                                                 .blueAccent,
                                                             size: 18.sp,
                                                           )
-                                                        : const CircularProgressIndicator(
-                                                            strokeWidth: 2,
-                                                            color: Colors
-                                                                .blueAccent,
+                                                        : const SizedBox(
+                                                            width: 18,
+                                                            height: 18,
+                                                            child: CircularProgressIndicator(
+                                                              strokeWidth: 2,
+                                                              color: Colors.blueAccent,
+                                                            ),
                                                           )
                                                   ],
                                                 ),

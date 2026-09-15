@@ -15,9 +15,9 @@ import 'package:nabd/core/prayer/prayer_service.dart';
 import 'package:workmanager/workmanager.dart';
 import 'package:nabd/GlobalHelpers/messaging_helper.dart';
 
-// تعريفات عالمية
-final PlayerBarBloc playerbarBloc = PlayerBarBloc();
-final AudioPlayer audioPlayer = AudioPlayer();
+// تعريفات عالمية - audioPlayer يجب إنشاؤه بعد JustAudioBackground.init ليتصل بخدمة الخلفية
+late final PlayerBarBloc playerbarBloc;
+late AudioPlayer audioPlayer;
 
 void main() async {
   // 1. تأمين المحرك
@@ -29,6 +29,9 @@ void main() async {
 
   // 3. تهيئة مشغّل الصوت في الخلفية للتحكم من الإشعارات وقفل الشاشة
   await initAudioBackground();
+  // إنشاء المشغل بعد تهيئة الخلفية ليكون مرتبطاً بخدمة just_audio_background
+  audioPlayer = AudioPlayer();
+  playerbarBloc = PlayerBarBloc();
 
   // 4. تهيئة Hive (لا تعتمد على Activity)
   await initializeHive();
@@ -103,14 +106,22 @@ class MyApp extends StatelessWidget {
                   return Stack(
                     children: [
                       if (child != null) child,
-                      BlocBuilder<PlayerBarBloc, PlayerBarState>(
-                        bloc: playerbarBloc,
-                        builder: (context, state) {
-                          if (state is PlayerBarClosed) {
-                            return const SizedBox.shrink();
-                          }
-                          return PlayerBar();
-                        },
+                      // Overlay منفصل للـ PlayerBar لتوفير Overlay ancestor لـ Slider/ReorderableListView
+                      Overlay(
+                        initialEntries: [
+                          OverlayEntry(
+                            builder: (overlayContext) =>
+                                BlocBuilder<PlayerBarBloc, PlayerBarState>(
+                              bloc: playerbarBloc,
+                              builder: (context, state) {
+                                if (state is PlayerBarClosed) {
+                                  return const SizedBox.shrink();
+                                }
+                                return const PlayerBar();
+                              },
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   );

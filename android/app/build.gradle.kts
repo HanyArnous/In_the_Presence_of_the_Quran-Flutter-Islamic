@@ -13,15 +13,15 @@ kotlin {
 
 android {
     namespace = "com.hanyarnous.quranpresence"
-    // Android 15 (API 35) - مطلوب للعرض حتى حافة الشاشة وفحص خدمات المقدمة
-    // compileSdk 36 لحل تضارب androidx.core 1.17 مع target 35
+    // Android 16 (API 36) - مطلوب من Play Console أغسطس 2025+ (targetSdk 36 حد أدنى)
+    // Edge-to-Edge + FGS عبر BOOT_COMPLETED تم إصلاحه مسبقاً ويعمل مع 36
     compileSdk = 36
     ndkVersion = flutter.ndkVersion
 
     defaultConfig {
         applicationId = "com.hanyarnous.quranpresence"
         minSdk = flutter.minSdkVersion
-        targetSdk = 35
+        targetSdk = 36
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }

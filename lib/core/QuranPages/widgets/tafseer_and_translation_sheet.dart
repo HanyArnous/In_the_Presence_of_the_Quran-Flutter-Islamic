@@ -265,6 +265,8 @@ class _TafseerAndTranslateSheetState extends State<TafseerAndTranslateSheet> {
                                                     horizontal: 18.0.w,
                                                     vertical: 6.h),
                                                 child: Row(
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.center,
                                                   children: [
                                                     Expanded(
                                                       child: Text(
@@ -275,7 +277,8 @@ class _TafseerAndTranslateSheetState extends State<TafseerAndTranslateSheet> {
                                                                 .withOpacity(.9),
                                                             fontSize: 13.sp),
                                                         overflow: TextOverflow.ellipsis,
-                                                        maxLines: 1,
+                                                        maxLines: 2,
+                                                        softWrap: true,
                                                       ),
                                                     ),
                                                     SizedBox(width: 10.w),
@@ -325,22 +328,26 @@ class _TafseerAndTranslateSheetState extends State<TafseerAndTranslateSheet> {
                     child: Padding(
                       padding: EdgeInsets.symmetric(horizontal: 14.0.w),
                       child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text(
-                            translationDataList[
-                                    getValue("indexOfTranslation") ?? 0]
-                                .typeTextInRelatedLanguage,
-                            style: TextStyle(
-                                color: Colors.black,
-                                fontFamily: translationDataList[getValue(
-                                                    "indexOfTranslation") ??
-                                                0]
-                                            .typeInNativeLanguage ==
-                                        "العربية"
-                                    ? "cairo"
-                                    : "roboto"),
+                          Expanded(
+                            child: Text(
+                              translationDataList[
+                                      getValue("indexOfTranslation") ?? 0]
+                                  .typeTextInRelatedLanguage,
+                              style: TextStyle(
+                                  color: Colors.black,
+                                  fontFamily: translationDataList[getValue(
+                                                      "indexOfTranslation") ??
+                                                  0]
+                                              .typeInNativeLanguage ==
+                                          "العربية"
+                                      ? "cairo"
+                                      : "roboto"),
+                              overflow: TextOverflow.ellipsis,
+                              maxLines: 1,
+                            ),
                           ),
+                          SizedBox(width: 10.w),
                           Icon(
                             FontAwesome.ellipsis,
                             size: 24.sp,

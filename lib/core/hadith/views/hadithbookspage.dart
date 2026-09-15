@@ -29,13 +29,29 @@ class _HadithBooksPageState extends State<HadithBooksPage> {
   bool downloadingAll = false;
   int downloadedCount = 0;
   String? errorMessage;
-  getCategories() async {
-    final lang = context.locale.languageCode;
+  Future<void> getCategories() async {
+    // استخدم locale الممرر للصفحة بدل context.locale لتفادي التعليق في initState
+    // (context.locale قبل اكتمال الشجرة يرمي استثناء خارج try فيبقى isLoading=true للأبد)
+    String lang = widget.locale.isNotEmpty ? widget.locale : "ar";
+    try {
+      if (mounted) {
+        try {
+          final ctxLang = context.locale.languageCode;
+          if (ctxLang.isNotEmpty) lang = ctxLang;
+        } catch (_) {}
+      }
+    } catch (_) {}
     categories = [];
     errorMessage = null;
+    String allTitle = "كل الأحاديث";
+    try {
+      allTitle = "allHadith".tr();
+    } catch (_) {
+      allTitle = lang == "ar" ? "كل الأحاديث" : "All Hadiths";
+    }
     categories.add(Category(
         id: "100000",
-        title: "allHadith".tr(),
+        title: allTitle,
         hadeethsCount: "2000+",
         parentId: "parentId"));
     try {
@@ -79,7 +95,7 @@ class _HadithBooksPageState extends State<HadithBooksPage> {
               categories = [
                 Category(
                     id: "100000",
-                    title: "allHadith".tr(),
+                    title: allTitle,
                     hadeethsCount: "2000+",
                     parentId: "parentId")
               ];
@@ -110,7 +126,7 @@ class _HadithBooksPageState extends State<HadithBooksPage> {
             categories = [
               Category(
                   id: "100000",
-                  title: "allHadith".tr(),
+                  title: allTitle,
                   hadeethsCount: "2000+",
                   parentId: "parentId")
             ];
@@ -137,7 +153,7 @@ class _HadithBooksPageState extends State<HadithBooksPage> {
               categories = [
                 Category(
                     id: "100000",
-                    title: "allHadith".tr(),
+                    title: allTitle,
                     hadeethsCount: "2000+",
                     parentId: "parentId")
               ];
@@ -153,13 +169,45 @@ class _HadithBooksPageState extends State<HadithBooksPage> {
           } catch (_) {}
         }
       }
-      // أول عنصر هو "كل الأحاديث" — إن لم تُجلب تصنيفات حقيقية فالصفحة فارغة
+      // أول عنصر هو "كل الأحاديث" — إن لم تُجلب تصنيفات حقيقية نعرض مكتبة محلية بديلة حتى لا تبقى الصفحة فارغة
+      if (categories.length <= 1) {
+        try {
+          for (final b in books) {
+            final file = (b["file"] ?? "").toString();
+            final name = (b["arabicName"] ?? b["name"] ?? "").toString();
+            if (name.isEmpty) continue;
+            categories.add(Category(
+                id: file.isNotEmpty ? file : name,
+                title: name,
+                hadeethsCount: "",
+                parentId: "local"));
+          }
+        } catch (_) {}
+      }
       if (categories.length <= 1) {
         errorMessage = "تعذّر تحميل التصنيفات — تحقق من الإنترنت ثم أعد المحاولة";
+      } else {
+        errorMessage = null;
       }
     } catch (_) {
       if (categories.length <= 1) {
+        try {
+          for (final b in books) {
+            final file = (b["file"] ?? "").toString();
+            final name = (b["arabicName"] ?? b["name"] ?? "").toString();
+            if (name.isEmpty) continue;
+            categories.add(Category(
+                id: file.isNotEmpty ? file : name,
+                title: name,
+                hadeethsCount: "",
+                parentId: "local"));
+          }
+        } catch (_) {}
+      }
+      if (categories.length <= 1) {
         errorMessage = "تعذّر تحميل التصنيفات — تحقق من الإنترنت ثم أعد المحاولة";
+      } else {
+        errorMessage = null;
       }
     } finally {
       isLoading = false;
@@ -178,8 +226,11 @@ class _HadithBooksPageState extends State<HadithBooksPage> {
 
   @override
   void initState() {
-    getCategories(); // TODO: implement initState
     super.initState();
+    // بعد اكتمال الشجرة حتى تكون context.locale و .tr() آمنة
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) getCategories();
+    });
   }
 
   @override
@@ -305,6 +356,16 @@ class _HadithBooksPageState extends State<HadithBooksPage> {
                   padding: const EdgeInsets.all(8.0),
                   child: InkWell(
                     onTap: () {
+                      // عناصر parentId=local هي كتب محلية بديلة عند تعذر API
+                      if (categories[index].parentId == "local") {
+                        Navigator.push(
+                            context,
+                            CupertinoPageRoute(
+                                builder: (builder) => LocalHadithBookPage(
+                                    file: categories[index].id,
+                                    title: categories[index].title)));
+                        return;
+                      }
                       Navigator.push(
                           context,
                           CupertinoPageRoute(
@@ -386,6 +447,178 @@ class _HadithBooksPageState extends State<HadithBooksPage> {
                 );
               },
               ),
+      ),
+    );
+  }
+}
+
+/// عارض الكتب المحلية البديلة (يُستخدم عند تعذر API فقط).
+/// يحمّل ملف JSON من التخزين المؤقت أو ينزّله ثم يعرض الأحاديث.
+class LocalHadithBookPage extends StatefulWidget {
+  final String file;
+  final String title;
+  const LocalHadithBookPage(
+      {super.key, required this.file, required this.title});
+
+  @override
+  State<LocalHadithBookPage> createState() => _LocalHadithBookPageState();
+}
+
+class _LocalHadithBookPageState extends State<LocalHadithBookPage> {
+  bool isLoading = true;
+  String? errorMessage;
+  List<Map<String, dynamic>> items = [];
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _load();
+    });
+  }
+
+  Future<void> _load() async {
+    setState(() {
+      isLoading = true;
+      errorMessage = null;
+    });
+    try {
+      dynamic book = await getBookByName(widget.file);
+      if (book == null) {
+        await downloadBook(widget.file);
+        book = await getBookByName(widget.file);
+      }
+      final List<Map<String, dynamic>> parsed = [];
+      if (book is List) {
+        for (final e in book) {
+          if (e is Map) {
+            parsed.add({
+              "hadith": (e["hadith"] ?? e["text"] ?? "").toString(),
+              "description": (e["description"] ?? "").toString(),
+              "number": e["number"],
+            });
+          }
+        }
+      }
+      if (parsed.isEmpty) {
+        errorMessage = "تعذّر تحميل الكتاب — تحقق من الإنترنت ثم أعد المحاولة";
+      } else {
+        items = parsed;
+      }
+    } catch (_) {
+      errorMessage = "تعذّر تحميل الكتاب — تحقق من الإنترنت ثم أعد المحاولة";
+    }
+    if (mounted) setState(() => isLoading = false);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor:
+          getValue("darkMode") ? quranPagesColorDark : quranPagesColorLight,
+      appBar: AppBar(
+        backgroundColor: getValue("darkMode")
+            ? darkModeSecondaryColor
+            : quranPagesColorLight,
+        elevation: 0,
+        iconTheme: IconThemeData(
+          color: getValue("darkMode")
+              ? Colors.white.withOpacity(.87)
+              : Colors.black87,
+        ),
+        title: Text(
+          widget.title,
+          style: TextStyle(
+            color: getValue("darkMode")
+                ? Colors.white.withOpacity(.87)
+                : Colors.black87,
+            fontFamily: "cairo",
+          ),
+        ),
+      ),
+      body: SafeArea(
+        bottom: true,
+        child: isLoading
+            ? Center(
+                child: CircularProgressIndicator(
+                  color: getValue("darkMode") ? Colors.white70 : blueColor,
+                ),
+              )
+            : (errorMessage != null && items.isEmpty)
+                ? Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(24.0),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.cloud_off_outlined, size: 56),
+                          const SizedBox(height: 12),
+                          Text(errorMessage!,
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(fontFamily: "cairo")),
+                          const SizedBox(height: 16),
+                          ElevatedButton.icon(
+                            onPressed: _load,
+                            icon: const Icon(Icons.refresh),
+                            label: const Text("إعادة المحاولة",
+                                style: TextStyle(fontFamily: "cairo")),
+                          ),
+                        ],
+                      ),
+                    ),
+                  )
+                : ListView.separated(
+                    padding: EdgeInsets.only(
+                        bottom: MediaQuery.of(context).padding.bottom + 16.h),
+                    separatorBuilder: (_, __) => const Divider(),
+                    itemCount: items.length,
+                    itemBuilder: (c, i) {
+                      final h = items[i];
+                      final num = h["number"]?.toString() ?? "${i + 1}";
+                      return Padding(
+                        padding: const EdgeInsets.all(12.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Text(
+                              "حديث رقم $num",
+                              style: TextStyle(
+                                  fontFamily: "cairo",
+                                  fontSize: 12.sp,
+                                  color: getValue("darkMode")
+                                      ? orangeColor
+                                      : const Color(0xffA28858)),
+                            ),
+                            SizedBox(height: 6.h),
+                            Text(
+                              h["hadith"]?.toString() ?? "",
+                              textAlign: TextAlign.right,
+                              style: TextStyle(
+                                  fontFamily: "cairo",
+                                  fontSize: 15.sp,
+                                  color: getValue("darkMode")
+                                      ? Colors.white
+                                      : Colors.black87),
+                            ),
+                            if ((h["description"]?.toString() ?? "")
+                                .isNotEmpty) ...[
+                              SizedBox(height: 8.h),
+                              Text(
+                                h["description"].toString(),
+                                textAlign: TextAlign.right,
+                                style: TextStyle(
+                                    fontFamily: "cairo",
+                                    fontSize: 12.sp,
+                                    color: getValue("darkMode")
+                                        ? Colors.white70
+                                        : Colors.black54),
+                              ),
+                            ],
+                          ],
+                        ),
+                      );
+                    },
+                  ),
       ),
     );
   }
